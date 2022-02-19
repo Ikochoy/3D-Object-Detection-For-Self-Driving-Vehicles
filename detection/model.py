@@ -122,7 +122,6 @@ class DetectionModel(nn.Module):
         # forward pass
         X = self.forward(bev_lidar.reshape(1, *bev_lidar.shape))  # 1 X 7 X H X W 
 
-        local_maximums = torch.zeros((k, 2))
         # need to construct a value of index and value, so that i can sort rows by descending value 
         # Splitting X
         # TODO check line 136 on whether we need to apply sigmoid in here or not
@@ -141,14 +140,19 @@ class DetectionModel(nn.Module):
         print(f"The below should be of shape {k} X 2")
         print(topk_fivebyfive.shape)
 
-
+        # not sure whether the way of index is correct
         masked_offsets = X_offsets[:, :, topk_fivebyfive]
         topk_fivebyfive_offsets = topk_fivebyfive + masked_offset
         
+        # not sure whether the way of index is correct
         sizes = X_sizes[:, :, topk_fivebyfive]
 
+        # not sure whether the way of index is correct
         headings = X_headings[:, :, topk_fivebyfive]
         new_angles = torch.atan2(headings[:, 0], headings[:, 1])
+        
+        # remove score values that is lower than the score threshold 
+         
 
         return Detections(
             torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
