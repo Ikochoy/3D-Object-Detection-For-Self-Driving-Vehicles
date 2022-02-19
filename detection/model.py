@@ -117,6 +117,39 @@ class DetectionModel(nn.Module):
             A set of 2D bounding box detections.
         """
         # TODO: Replace this stub code.
+        
+        # TODO: Not sure we have to reshape the 3d tensor to a 4d tensor so as to match expectation of 
+        # forward pass
+        X = self.forward(bev_lidar.reshape(1, *bev_lidar.shape))  # 1 X 7 X H X W 
+
+        local_maximums = torch.zeros((k, 2))
+        # need to construct a value of index and value, so that i can sort rows by descending value 
+        # Splitting X
+        # TODO check line 136 on whether we need to apply sigmoid in here or not
+        X_heatmap = X[:, 0:1]  # [1 x H x W] 
+        X_offsets = X[:, 1:3]  # [2 x H x W]
+        X_sizes = X[:, 3:5]  # [2 x H x W]
+        X_headings = X[:, 5:7]  # [2 x H x W]
+        # get indices and values that satisfy 5x5 maximum condition
+        maxpool =  nn.MaxPool2d(5, padding=2, stride=1)
+        mask = (X_heatmap == maxpool(X_heatmap)) # B x 1 x H X W
+        five_by_five_max = (mask).nonzero(as_tuple=False) # M x 2
+        values = torch.masked_select(X_heatmap, mask) # M x 1
+        # kvalues -- s , topk_fivebyfive is the (i, j)
+        kvalues, indices = torch.topk(values, k) # K X 1
+        topk_fivebyfive = five_by_five_max[indices] # K X 2
+        print(f"The below should be of shape {k} X 2")
+        print(topk_fivebyfive.shape)
+
+
+        masked_offsets = X_offsets[:, :, topk_fivebyfive]
+        topk_fivebyfive_offsets = topk_fivebyfive + masked_offset
+        
+        sizes = X_sizes[:, :, topk_fivebyfive]
+
+        headings = X_headings[:, :, topk_fivebyfive]
+        new_angles = torch.atan2(headings[:, 0], headings[:, 1])
+
         return Detections(
             torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
         )
