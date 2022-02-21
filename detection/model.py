@@ -136,6 +136,9 @@ class DetectionModel(nn.Module):
         values = torch.masked_select(X_heatmap, mask) # M x 1
         # kvalues -- s , topk_fivebyfive is the (i, j)
         kvalues, indices = torch.topk(values, k) # K X 1
+        idx = (kvalues > score_threshold).nonzero(as_tuple=False)
+        indices = indices[idx]
+        chosen_scores = kvalues[idx]
         topk_fivebyfive = five_by_five_max[indices] # K X 2
         print(f"The below should be of shape {k} X 2")
         print(topk_fivebyfive.shape)
@@ -150,10 +153,10 @@ class DetectionModel(nn.Module):
         # not sure whether the way of index is correct
         headings = X_headings[:, :, topk_fivebyfive]
         new_angles = torch.atan2(headings[:, 0], headings[:, 1])
-        
-        # remove score values that is lower than the score threshold 
-         
 
+        # return Detections(
+        #     torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
+        # )
         return Detections(
-            torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
+            topk_fivebyfive_offsets, new_angles, sizes, chosen_scores
         )
