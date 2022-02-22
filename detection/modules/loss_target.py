@@ -34,10 +34,6 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
     # center == (cx, cy)
     h, w, _ = grid_coords.shape
 
-    def gaussian(tensor_row):
-        #print(tensor_row[0], center[0], tensor_row[1], center[1])
-        return math.exp(-((tensor_row[0].item() - center[0].item())**2 + (tensor_row[1].item() - center[1].item())**2 / scale))
-
     tensor = grid_coords.clone().detach()
     tensor_reshaped = tensor.reshape(h * w, 2)
     gaussianed = torch.exp(torch.neg(torch.square(tensor_reshaped[:,0] - center[0]) + torch.square(tensor_reshaped[:, 1] - center[1])) / scale)
@@ -132,10 +128,8 @@ class DetectionLossTargetBuilder:
 
         # TODO: Replace this stub code.
         sizes = torch.zeros(H, W, 2)
-        index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1)
-        headings.index_put(tuple(index_mask.t()), values)
-        
+        sizes.index_put(tuple(index_mask.t()), values)  
 
         # 5. Create heading training targets.
         # Given the label's heading angle yaw, the target heading at pixel (i, j)
