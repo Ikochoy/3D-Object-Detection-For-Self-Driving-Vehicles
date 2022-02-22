@@ -122,6 +122,7 @@ class DetectionLossTargetBuilder:
         offsets = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
+        values = torch.sum(values, dim=0)
         offsets.index_put_(tuple(index_mask.t()), values)
 
         # 4. Create box size training target.
@@ -134,7 +135,7 @@ class DetectionLossTargetBuilder:
         sizes = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1)
-        headings.index_put(tuple(index_mask.t()), values)
+        sizes.index_put(tuple(index_mask.t()), values)
         
 
         # 5. Create heading training targets.
@@ -147,7 +148,7 @@ class DetectionLossTargetBuilder:
         # do this before tmr    
         headings = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        values = (torch.tensor([sin(yaw), cos(yaw)])).repeat(index_mask.shape[0], 1)
+        values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1)
         headings.index_put(tuple(index_mask.t()), values)
 
         # 6. Concatenate training targets into a [7 x H x W] tensor.
