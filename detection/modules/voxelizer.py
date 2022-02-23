@@ -91,7 +91,12 @@ class Voxelizer(torch.nn.Module):
             #                     torch.bitwise_and(cloud[:, 2] > self._z_min, cloud[:, 2] < self._z_max)  
             #                 )
             print(f"Shape of Cloud, should be N x 3 : {cloud.shape}")
-            idx_within_range = (self._x_min < cloud[:, 0] < self.x_max) & (self._y_min < cloud[:, 1] < self._y_max) & (self._z_min < cloud[:, 2] < self._z_max)
+            #idx_within_range = (self._x_min < cloud[:, 0] < self.x_max) & (self._y_min < cloud[:, 1] < self._y_max) & (self._z_min < cloud[:, 2] < self._z_max)
+            idx_x = (self._x_min < cloud[:, 0]) & (cloud[:, 0] < self._x_max)
+            idx_y = (self._y_min < cloud[:, 1]) & (cloud[:, 1] < self._y_max)
+            idx_z = (self._z_min < cloud[:, 2]) & (cloud[:, 2] < self._z_max)
+            idx_within_range = idx_x & idx_y & idx_z
+
             cloud = cloud[idx_within_range] # S x 3 where S refers to the number of x, y, z that satisfy the mask
 
         
