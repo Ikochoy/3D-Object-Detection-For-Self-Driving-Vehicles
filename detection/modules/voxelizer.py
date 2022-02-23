@@ -80,7 +80,7 @@ class Voxelizer(torch.nn.Module):
         # TODO: Replace this stub code.
         initial_tensor = torch.zeros(
             (len(pointclouds), self._depth, self._height, self._width),
-            dtype=torch.bool,  ## or float??
+            #dtype=torch.bool,  ## or float??
             device=pointclouds[0].device,
         )
         for w, cloud in enumerate(pointclouds):
@@ -106,7 +106,7 @@ class Voxelizer(torch.nn.Module):
 
 
             indices = new_cloud.long()
-            ones = torch.tensor(1.).bool()
+            ones = torch.tensor(1.)
             initial_tensor[w].index_put_(tuple(indices.t()), ones)
             
 
