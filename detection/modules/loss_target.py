@@ -142,7 +142,7 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         # do this before tmr    
         headings = torch.zeros(H, W, 2)
-        index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
+        #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
         headings.index_put(tuple(index_mask.t()), values)
 
