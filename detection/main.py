@@ -65,6 +65,10 @@ def overfit(
         loss.backward()
         optimizer.step()
 
+        if idx % 100 == 0:
+            print(f"PREDICTIONS \n {predictions}")
+            print(f"TARGETS \n {bev_targets}")
+
         # inference on the training example, and save vis results
         if (idx + 1) % log_frequency == 0:
             print(
