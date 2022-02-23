@@ -140,25 +140,28 @@ class DetectionModel(nn.Module):
         # kvalues -- s , topk_fivebyfive is the (i, j)
         kvalues, indices = torch.topk(values, k) # K X 1
         idx = (kvalues > score_threshold).nonzero(as_tuple=False)
-        print(indices.shape, indices)  # 1 x 100
+        #print(indices.shape, indices)  # 1 x 100
         indices = indices[idx].flatten() #
 
         chosen_scores = kvalues[idx]
         topk_fivebyfive = five_by_five_max[indices] # K X 2
-        print(indices.shape, indices)  # 100 x 1
+        #print(indices.shape, indices)  # 100 x 1
 
-        print(five_by_five_max.shape)  # M x 2
-        print(topk_fivebyfive.shape)  # K x 2
-
+        #print(five_by_five_max.shape)  # M x 2
+        #print(topk_fivebyfive.shape)  # K x 2
+        
+        masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
+        #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
         # not sure whether the way of index is correct
         sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
 
         # not sure whether the way of index is correct
         headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        print(headings.shape)
+        #print(headings.shape)
         new_angles = torch.atan2(headings[0], headings[1])
 
-        print(sizes.shape, new_angles.shape)
+        #print(sizes.shape, new_angles.shape)
 
         # return Detections(
         #     torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
