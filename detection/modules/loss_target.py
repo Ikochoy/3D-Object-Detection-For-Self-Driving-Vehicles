@@ -131,7 +131,7 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         sizes = torch.zeros(H, W, 2)
         values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1) + 0.
-        sizes = sizes.index_put(tuple(index_mask.t()), values)
+        sizes = sizes.index_put_(tuple(index_mask.t()), values)
         
 
         # 5. Create heading training targets.
@@ -145,7 +145,7 @@ class DetectionLossTargetBuilder:
         headings = torch.zeros(H, W, 2)
         #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
-        headings = headings.index_put(tuple(index_mask.t()), values)
+        headings = headings.index_put_(tuple(index_mask.t()), values)
 
         # 6. Concatenate training targets into a [7 x H x W] tensor.
         targets = torch.cat([heatmap[:, :, None], offsets, sizes, headings], dim=-1)
