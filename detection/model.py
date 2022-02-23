@@ -149,37 +149,22 @@ class DetectionModel(nn.Module):
         #print(five_by_five_max.shape)  # M x 2
         #print(topk_fivebyfive.shape)  # K x 2
         
-        # masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        # topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
-        # #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
-        # # not sure whether the way of index is correct
-        # sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
+        #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
+        # not sure whether the way of index is correct
+        sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
 
-        # # not sure whether the way of index is correct
-        # headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        # #print(headings.shape)
-        # new_angles = torch.atan2(headings[0], headings[1])
-
-        sizes = torch.zeros((topk_fivebyfive.shape))
-        new_angles = torch.zeros((topk_fivebyfive.shape[0],))
-        for c_i in range(len(topk_fivebyfive)):
-            i, j = int(topk_fivebyfive[c_i][0]), int(topk_fivebyfive[c_i][1])
-            topk_fivebyfive[c_i][0] += X_offsets[0][i][j]
-            topk_fivebyfive[c_j][1] += X_offsets[1][i][j]
-            sizes[c_i][0] = X_sizes[0][i][j]
-            sizes[c_i][1] = X_sizes[1][i][j]
-            new_angles = math.atan2(X_headings[0][i][j], X_headings[1][i][j])
-
+        # not sure whether the way of index is correct
+        headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        #print(headings.shape)
+        new_angles = torch.atan2(headings[0], headings[1])
 
         #print(sizes.shape, new_angles.shape)
 
         # return Detections(
         #     torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
         # )
-        # return Detections(
-        #     topk_fivebyfive_offsets, new_angles, sizes.t(), chosen_scores
-        # )
         return Detections(
-            topk_fivebyfive, new_angles, sizes, chosen_scores
+            topk_fivebyfive_offsets, new_angles, sizes.t(), chosen_scores
         )
-
