@@ -125,16 +125,16 @@ class DetectionModel(nn.Module):
         # need to construct a value of index and value, so that i can sort rows by descending value 
         # Splitting X
         # TODO check line 136 on whether we need to apply sigmoid in here or not
-        X_heatmap = X[0]  # [1 x H x W] 
+        X_heatmap = X[0:1]  # [1 x H x W] 
         X_offsets = X[1:3]  # [2 x H x W]
         X_sizes = X[3:5]  # [2 x H x W]
         X_headings = X[5:7]  # [2 x H x W]
         # get indices and values that satisfy 5x5 maximum condition
         maxpool =  nn.MaxPool2d(kernel_size=5, padding=2, stride=1)
-        mask = (X_heatmap >= maxpool(X_heatmap[None, None])) # 1 x H X W
+        mask = (X_heatmap >= maxpool(X_heatmap)) # 1 x H X W
         five_by_five_max = (mask).nonzero(as_tuple=False) # M x 3
         five_by_five_max = five_by_five_max[:, 1:] # M x 2
-
+        print(X_heatmap.shape, X_offsets.shape, X_sizes.shape, X_headings.shape)
         values = torch.masked_select(X_heatmap, mask) # M x 1
         # kvalues -- s , topk_fivebyfive is the (i, j)
         kvalues, indices = torch.topk(values, k) # K X 1
@@ -146,12 +146,12 @@ class DetectionModel(nn.Module):
         topk_fivebyfive = five_by_five_max[indices] # K X 2
         #print(indices.shape, indices)  # 100 x 1
 
-        #print(five_by_five_max.shape)  # M x 2
-        #print(topk_fivebyfive.shape)  # K x 2
+        print(five_by_five_max.shape)  # M x 2
+        print(topk_fivebyfive.shape)  # K x 2
         
         masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
         topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
-        #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
+        print("topkfbf_offset", topk_fivebyfive_offsets.shape)
         # not sure whether the way of index is correct
         sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
 
