@@ -32,15 +32,18 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
 
     # grid_coords.shape == (h, w, 2)
     # center == (cx, cy)
-    h, w, _ = grid_coords.shape
+    # h, w, _ = grid_coords.shape
 
-    tensor = grid_coords.clone().detach()
-    tensor_reshaped = tensor.reshape(h * w, 2)
-    gaussianed = torch.exp(torch.neg(((tensor_reshaped[:,0] - center[0])**2 + (tensor_reshaped[:, 1] - center[1])**2)/ scale))
-    gaussianed = gaussianed.reshape(h, w)  # stack -> h*w, 1
+    # tensor = grid_coords.clone().detach()
+    # tensor_reshaped = tensor.reshape(h * w, 2)
+    # gaussianed = torch.exp(torch.neg(((tensor_reshaped[:,0] - center[0])**2 + (tensor_reshaped[:, 1] - center[1])**2)/ scale))
+    # gaussianed = gaussianed.reshape(h, w)  # stack -> h*w, 1
     
     # normalize with peak value being 1
     # gaussianed = torch.div(gaussianed, gaussianed.max())
+    x = grid_coords[:, :, 0]
+    y = grid_coords[:, :, 1]
+    gaussianed = torch.exp(-((x - center[0])**2 + (y-center[1])**2)/scale)
     return gaussianed
 
 
@@ -120,6 +123,7 @@ class DetectionLossTargetBuilder:
         values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
         values = torch.sum(values, dim=0) + 0.
         offsets = offsets.index_put_(tuple(index_mask.t()), values)
+
        
         # 4. Create box size training target.
         # Given the label's bounding box size (x_size, y_size), the target size at pixel (i, j)
@@ -139,8 +143,7 @@ class DetectionLossTargetBuilder:
         # If the heatmap value at (i, j) is less than or equal to self._heatmap_threshold,
         # the target heading equals (0, 0) instead.
 
-        # TODO: Replace this stub code.
-        # do this before tmr    
+        # TODO: Replace this stub code.   
         headings = torch.zeros(H, W, 2)
         #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
