@@ -36,7 +36,7 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
 
     tensor = grid_coords.clone().detach()
     tensor_reshaped = tensor.reshape(h * w, 2)
-    gaussianed = torch.exp(torch.neg(torch.square(tensor_reshaped[:,0] - center[0]) + torch.square(tensor_reshaped[:, 1] - center[1])) / scale)
+    gaussianed = torch.exp(torch.neg(((tensor_reshaped[:,0] - center[0])**2 + (tensor_reshaped[:, 1] - center[1])**2)/ scale))
     gaussianed = gaussianed.reshape(h, w)  # stack -> h*w, 1
     
     # normalize with peak value being 1
@@ -119,7 +119,7 @@ class DetectionLossTargetBuilder:
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
         values = torch.sum(values, dim=0) + 0.
-        offsets.index_put_(tuple(index_mask.t()), values)
+        offsets = offsets.index_put_(tuple(index_mask.t()), values)
        
         # 4. Create box size training target.
         # Given the label's bounding box size (x_size, y_size), the target size at pixel (i, j)
@@ -130,7 +130,7 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         sizes = torch.zeros(H, W, 2)
         values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1) + 0.
-        sizes.index_put(tuple(index_mask.t()), values)
+        sizes = sizes.index_put(tuple(index_mask.t()), values)
         
 
         # 5. Create heading training targets.
@@ -144,7 +144,7 @@ class DetectionLossTargetBuilder:
         headings = torch.zeros(H, W, 2)
         #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
-        headings.index_put(tuple(index_mask.t()), values)
+        headings = headings.index_put(tuple(index_mask.t()), values)
 
         # 6. Concatenate training targets into a [7 x H x W] tensor.
         targets = torch.cat([heatmap[:, :, None], offsets, sizes, headings], dim=-1)

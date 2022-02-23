@@ -125,7 +125,7 @@ class DetectionModel(nn.Module):
         # need to construct a value of index and value, so that i can sort rows by descending value 
         # Splitting X
         # TODO check line 136 on whether we need to apply sigmoid in here or not
-        X_heatmap = X[0]  # [1 x H x W] 
+        X_heatmap = X[0:1]  # [1 x H x W] 
         X_offsets = X[1:3]  # [2 x H x W]
         X_sizes = X[3:5]  # [2 x H x W]
         X_headings = X[5:7]  # [2 x H x W]
