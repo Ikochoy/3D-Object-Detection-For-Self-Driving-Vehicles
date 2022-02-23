@@ -7,7 +7,7 @@ from detection.modules.loss_function import DetectionLossConfig
 from detection.modules.residual_block import ResidualBlock
 from detection.modules.voxelizer import VoxelizerConfig
 from detection.types import Detections
-
+import math
 
 @dataclass
 class DetectionModelConfig:
@@ -125,18 +125,17 @@ class DetectionModel(nn.Module):
         # need to construct a value of index and value, so that i can sort rows by descending value 
         # Splitting X
         # TODO check line 136 on whether we need to apply sigmoid in here or not
-        X_heatmap = X[0:1]  # [1 x H x W] 
+        X_heatmap = X[0]  # [1 x H x W] 
         X_offsets = X[1:3]  # [2 x H x W]
         X_sizes = X[3:5]  # [2 x H x W]
         X_headings = X[5:7]  # [2 x H x W]
         # get indices and values that satisfy 5x5 maximum condition
-        maxpool =  nn.MaxPool2d(5, padding=2, stride=1)
-        mask = (X_heatmap >= maxpool(X_heatmap)) # 1 x H X W
+        maxpool =  nn.MaxPool2d(kernel_size=5, padding=2, stride=1)
+        mask = (X_heatmap >= maxpool(X_heatmap[None, None])) # 1 x H X W
         five_by_five_max = (mask).nonzero(as_tuple=False) # M x 3
         five_by_five_max = five_by_five_max[:, 1:] # M x 2
 
         values = torch.masked_select(X_heatmap, mask) # M x 1
-
         # kvalues -- s , topk_fivebyfive is the (i, j)
         kvalues, indices = torch.topk(values, k) # K X 1
         idx = (kvalues > score_threshold).nonzero(as_tuple=False)
@@ -150,22 +149,37 @@ class DetectionModel(nn.Module):
         #print(five_by_five_max.shape)  # M x 2
         #print(topk_fivebyfive.shape)  # K x 2
         
-        masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
-        #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
-        # not sure whether the way of index is correct
-        sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        # masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        # topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
+        # #print("topkfbf_offset", topk_fivebyfive_offsets.shape)
+        # # not sure whether the way of index is correct
+        # sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
 
-        # not sure whether the way of index is correct
-        headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        #print(headings.shape)
-        new_angles = torch.atan2(headings[0], headings[1])
+        # # not sure whether the way of index is correct
+        # headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        # #print(headings.shape)
+        # new_angles = torch.atan2(headings[0], headings[1])
+
+        sizes = torch.zeros((topk_fivebyfive.shape))
+        new_angles = torch.zeros((topk_fivebyfive.shape[0],))
+        for c_i in range(len(topk_fivebyfive)):
+            i, j = int(topk_fivebyfive[c_i][0]), int(topk_fivebyfive[c_i][1])
+            topk_fivebyfive[c_i][0] += X_offsets[0][i][j]
+            topk_fivebyfive[c_j][1] += X_offsets[1][i][j]
+            sizes[c_i][0] = X_sizes[0][i][j]
+            sizes[c_i][1] = X_sizes[1][i][j]
+            new_angles = math.atan2(X_headings[0][i][j], X_headings[1][i][j])
+
 
         #print(sizes.shape, new_angles.shape)
 
         # return Detections(
         #     torch.zeros((0, 3)), torch.zeros(0), torch.zeros((0, 2)), torch.zeros(0)
         # )
+        # return Detections(
+        #     topk_fivebyfive_offsets, new_angles, sizes.t(), chosen_scores
+        # )
         return Detections(
-            topk_fivebyfive_offsets, new_angles, sizes.t(), chosen_scores
+            topk_fivebyfive, new_angles, sizes, chosen_scores
         )
+
