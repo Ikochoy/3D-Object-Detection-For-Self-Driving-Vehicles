@@ -37,7 +37,7 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
     tensor = grid_coords.clone().detach()
     tensor_reshaped = tensor.reshape(h * w, 2)
     gaussianed = torch.exp(torch.neg(torch.square(tensor_reshaped[:,0] - center[0]) + torch.square(tensor_reshaped[:, 1] - center[1])) / scale)
-    print(f"Gaussian Shape: {gaussianed.shape}")
+    #print(f"Gaussian Shape: {gaussianed.shape}")
     gaussianed = gaussianed.reshape(h, w)  # stack -> h*w, 1
     
     # normalize with peak value being 1
