@@ -132,7 +132,7 @@ class DetectionModel(nn.Module):
         # get indices and values that satisfy 5x5 maximum condition
         maxpool =  nn.MaxPool2d(5, padding=2, stride=1)
         mask = (X_heatmap >= maxpool(X_heatmap)) # 1 x H X W
-        five_by_five_max = (mask).nonzero(as_tuple=False) # M x 2
+        five_by_five_max = (mask).nonzero(as_tuple=False) # M x 3
         five_by_five_max = five_by_five_max[:, 1:] # M x 2
 
         values = torch.masked_select(X_heatmap, mask) # M x 1
@@ -150,10 +150,6 @@ class DetectionModel(nn.Module):
         print(five_by_five_max.shape)  # M x 2
         print(topk_fivebyfive.shape)  # K x 2
 
-        masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
-        topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
-        print("topkfbf_offset", topk_fivebyfive_offsets.shape)
-        
         # not sure whether the way of index is correct
         sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
 
