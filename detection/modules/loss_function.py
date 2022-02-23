@@ -32,10 +32,9 @@ def heatmap_weighted_mse_loss(
     # return torch.sum(predictions) * 0.0
 
     # reduce the C dimension which corresponds to dim=1
-    l2_norm = torch.sum((predictions - targets) ** 2, dim=1) # [batch_size x H x W] tensor `mse_loss`
-
+    # l2_norm = torch.sum((predictions - targets)**2, dim=1) # [batch_size x H x W] tensor `mse_loss`
+    l2_norm = torch.linalg.norm(predictions-targets)
     heatmap_reduced = torch.sum(heatmap, dim=1)  # reducing dimension
-    print(f"Heatmap_reduced shape: {heatmap_reduced.shape}")
     mask = heatmap_reduced > heatmap_threshold  # [batch_size x H x W] tensor `mask`
 
     heatmap_masked = torch.masked_select(heatmap_reduced, mask)  # 1-D tensor with only valid elements
