@@ -106,7 +106,9 @@ class Voxelizer(torch.nn.Module):
             new_cloud = torch.div(cloud, self._step, rounding_mode='floor')
             new_cloud = torch.fliplr(new_cloud)
             # now new_cloud is in i, j, k order after left right flip
-
+            new_cloud[:, 0].clip_(max=self._depth-1)
+            new_cloud[:, 1].clip_(max=self._height-1)
+            new_cloud[:, 2].clip_(max=self._width-1)
             indices = new_cloud.long()
             ones = torch.tensor(1.)
             initial_tensor[w].index_put_(tuple(indices.t()), ones)
