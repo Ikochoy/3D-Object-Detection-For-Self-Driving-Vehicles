@@ -50,7 +50,7 @@ class Voxelizer(torch.nn.Module):
         self._y_min, self._y_max = config.y_range
         self._z_min, self._z_max = config.z_range
         self._depth, self._height, self._width = config.bev_size
-        print("CONFIG:", self._x_min)
+        # print("CONFIG:", self._x_min)
 
     def forward(self, pointclouds: List[torch.Tensor]) -> torch.Tensor:
         """Voxelize a batch of lidar pointclouds into a BEV occupacy image.
@@ -80,19 +80,19 @@ class Voxelizer(torch.nn.Module):
         # TODO: Replace this stub code.
         initial_tensor = torch.zeros(
             (len(pointclouds), self._depth, self._height, self._width),
-            #dtype=torch.bool,  ## or float??
             device=pointclouds[0].device,
         )
         for w, cloud in enumerate(pointclouds):
-            #line 89- 99 tested
-            idx_within_range = torch.bitwise_and(
-                                torch.bitwise_and(
-                                    torch.bitwise_and(cloud[:, 0] > self._x_min, cloud[:, 0] < self._x_max),
-                                    torch.bitwise_and(cloud[:, 1] > self._y_min, cloud[:, 1] < self._y_max),
-                                ), 
-                                torch.bitwise_and(cloud[:, 2] > self._z_min, cloud[:, 2] < self._z_max)  
-                            )
-            cloud = cloud[idx_within_range]
+            # idx_within_range = torch.bitwise_and(
+            #                     torch.bitwise_and(
+            #                         torch.bitwise_and(cloud[:, 0] > self._x_min, cloud[:, 0] < self._x_max),
+            #                         torch.bitwise_and(cloud[:, 1] > self._y_min, cloud[:, 1] < self._y_max),
+            #                     ), 
+            #                     torch.bitwise_and(cloud[:, 2] > self._z_min, cloud[:, 2] < self._z_max)  
+            #                 )
+            print(f"Shape of Cloud, should be N x 3 : {cloud.shape}")
+            idx_within_range = (self._x_min < cloud[:, 0] < self.x_max) & (self._y_min < cloud[:, 1] < self._y_max) & (self._z_min < cloud[:, 2] < self._z_max)
+            cloud = cloud[idx_within_range] # S x 3 where S refers to the number of x, y, z that satisfy the mask
 
         
             cloud[:, 0].add_(-self._x_min)
@@ -104,12 +104,9 @@ class Voxelizer(torch.nn.Module):
             new_cloud = torch.fliplr(new_cloud)
             # now new_cloud is in i, j, k order after left right flip
 
-
             indices = new_cloud.long()
             ones = torch.tensor(1.)
             initial_tensor[w].index_put_(tuple(indices.t()), ones)
-            
-
         return initial_tensor
 
 
