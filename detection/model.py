@@ -117,7 +117,7 @@ class DetectionModel(nn.Module):
             A set of 2D bounding box detections.
         """
         # TODO: Replace this stub code.
-        
+        print("inference function is being executed")
         # TODO: Not sure we have to reshape the 3d tensor to a 4d tensor so as to match expectation of 
         # forward pass
         X = self.forward(bev_lidar.reshape(1, *bev_lidar.shape))[0]  # 1 X 7 X H X W 
