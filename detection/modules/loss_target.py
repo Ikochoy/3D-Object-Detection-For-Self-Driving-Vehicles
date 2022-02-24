@@ -121,7 +121,10 @@ class DetectionLossTargetBuilder:
         values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
         values = torch.sum(values, dim=0) + 0.
         offsets = offsets.index_put_(tuple(index_mask.t()), values)
-       
+        #print(f"Index Mask in build target tensor \n {index_mask}")
+        #print(f"\n cx and cy \n {cx, cy}")
+        #print(f"\n values \n {values}")
+        #print(f"\n offsets \n {offsets[index_mask.t()[0], index_mask.t()[1]]}")
         # 4. Create box size training target.
         # Given the label's bounding box size (x_size, y_size), the target size at pixel (i, j)
         # equals (x_size, y_size) if the heatmap value at (i, j) exceeds self._heatmap_threshold.
@@ -132,8 +135,8 @@ class DetectionLossTargetBuilder:
         sizes = torch.zeros(H, W, 2)
         values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1) + 0.
         sizes = sizes.index_put_(tuple(index_mask.t()), values)
-        
-
+        print(f"xsize, ysize \n {x_size, y_size}\n sizes \n {sizes[index_mask.t()[0], index_mask.t()[1]]}\n")
+        print(sizes)
         # 5. Create heading training targets.
         # Given the label's heading angle yaw, the target heading at pixel (i, j)
         # equals (sin(yaw), cos(yaw)) if the heatmap value at (i, j) exceeds self._heatmap_threshold.
@@ -146,7 +149,8 @@ class DetectionLossTargetBuilder:
         #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
         headings = headings.index_put_(tuple(index_mask.t()), values)
-
+        print(f"sin, cos\n {math.sin(yaw), math.cos(yaw)} \n headings \n {headings[index_mask.t()[0], index_mask.t()[1]]}\n")
+        print(headings)
         # 6. Concatenate training targets into a [7 x H x W] tensor.
         targets = torch.cat([heatmap[:, :, None], offsets, sizes, headings], dim=-1)
         return targets.permute(2, 0, 1)  # [7 x H x W]
