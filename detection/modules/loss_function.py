@@ -30,16 +30,25 @@ def heatmap_weighted_mse_loss(
     """
     # TODO: Replace this stub code.
     # return torch.sum(predictions) * 0.0
-
+    b, _, h, w = targets.shape
     # reduce the C dimension which corresponds to dim=1
-    #l2_norm = torch.sum((predictions - targets)**2, dim=1) # [batch_size x H x W] tensor `mse_loss`
-    l2_norm = torch.linalg.norm(predictions-targets, dim=1)
-    print(f"l2_norm size: {l2_norm.shape}")
+    l2_norm = torch.sum(torch.square(predictions - targets), dim=1, keepdim=True).reshape(b, h, w)
+    print(l2_norm)
+     # [batch_size x H x W] tensor `mse_loss`
+    #l2_norm = torch.linalg.norm(predictions-targets, dim=1)
+    #print(f"l2_norm size: {l2_norm.shape}")
     heatmap_reduced = torch.sum(heatmap, dim=1)  # reducing dimension
-    print(f"heatmap_reduced: {heatmap_reduced.shape}")
+    #print(f"heatmap_reduced: {heatmap_reduced.shape}")
     mask = heatmap_reduced > heatmap_threshold  # [batch_size x H x W] tensor `mask`
     heatmap_masked = torch.masked_select(heatmap_reduced, mask)  # 1-D tensor with only valid elements
     l2_norm_masked = torch.masked_select(l2_norm, mask)  # same order corresponding to heatmap_masked elements
+
+    # torch.sum(
+    #         heatmap * torch.square(predictions - targets)
+    #         + torch.tensor(0, dtype=float),
+    #         dim=1,
+    #         keepdim=True,
+    #     ).reshape(batch_size, H, W)
     return torch.mean(heatmap_masked * l2_norm_masked) # average of element-wise multiplied masked entries
 
 
