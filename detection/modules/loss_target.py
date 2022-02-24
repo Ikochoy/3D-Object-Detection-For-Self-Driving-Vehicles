@@ -111,6 +111,7 @@ class DetectionLossTargetBuilder:
         H_grid_coords, W_grid_coords = torch.meshgrid(H_coords, W_coords, indexing="ij")
         grid_coords = torch.stack([W_grid_coords, H_grid_coords], dim=-1)  # [H x W x 2]
         print(f"grid coords: \n {grid_coords}\n")
+        
         # 2. Create heatmap training targets by invoking the `create_heatmap` function.
         center = torch.tensor([cx, cy])
         scale = (x_size ** 2 + y_size ** 2) / self._heatmap_norm_scale
@@ -124,15 +125,22 @@ class DetectionLossTargetBuilder:
 
         # TODO: Replace this stub code.
         offsets = torch.zeros(H, W, 2)
-        index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
-        values = torch.sum(values, dim=0) + 0.
-        offsets = offsets.index_put_(tuple(index_mask.t()), values)
+        # index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
+        # # TODO it might be using grid coords instead of index_mask
+        # values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
+        # values = torch.sum(values, dim=0) + 0.
+        # offsets = offsets.index_put_(tuple(index_mask.t()), values)
+        for i in range(offsets.shape[0]):
+            for j in range(offsets.shape[1]):
+                if heatmap[i][j] > self._heatmap_threshold:
+                    offsets[i][j][0] = cx - i
+                    offsets[i][j][1] = cy - j
 
         #print(f"Index Mask in build target tensor \n {index_mask}")
         #print(f"\n cx and cy \n {cx, cy}")
         #print(f"\n values \n {values}")
         #print(f"\n offsets \n {offsets[index_mask.t()[0], index_mask.t()[1]]}")
+
         # 4. Create box size training target.
         # Given the label's bounding box size (x_size, y_size), the target size at pixel (i, j)
         # equals (x_size, y_size) if the heatmap value at (i, j) exceeds self._heatmap_threshold.
@@ -141,8 +149,13 @@ class DetectionLossTargetBuilder:
 
         # TODO: Replace this stub code.
         sizes = torch.zeros(H, W, 2)
-        values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1) + 0.
-        sizes = sizes.index_put_(tuple(index_mask.t()), values)
+        # values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1) + 0.
+        # sizes = sizes.index_put_(tuple(index_mask.t()), values)
+        for i in range(sizes.shape[0]):
+            for j in range(sizes.shape[1]):
+                if heatmap[i][j] > self._heatmap_threshold:
+                    sizes[i][j][0] = x_size
+                    sizes[i][j][1] = y_size
         #print(f"xsize, ysize \n {x_size, y_size}\n sizes \n {sizes[index_mask.t()[0], index_mask.t()[1]]}\n")
         #print(sizes)
         # 5. Create heading training targets.
@@ -154,8 +167,13 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.   
         headings = torch.zeros(H, W, 2)
         #index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
-        headings = headings.index_put_(tuple(index_mask.t()), values)
+        # values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1) + 0.
+        # headings = headings.index_put_(tuple(index_mask.t()), values)
+        for i in range(H):
+            for j in range(W):
+                if heatmap[i][j] > self._heatmap_threshold:
+                    headings[i][j][0] = math.sin(yaw)
+                    headings[i][j][1] = math.cos(yaw)
        # print(f"sin, cos\n {math.sin(yaw), math.cos(yaw)} \n headings \n {headings[index_mask.t()[0], index_mask.t()[1]]}\n")
         #print(headings)
         # 6. Concatenate training targets into a [7 x H x W] tensor.
