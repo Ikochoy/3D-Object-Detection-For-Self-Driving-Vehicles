@@ -42,12 +42,12 @@ def heatmap_weighted_mse_loss(
     print(f"heatmap: \n{heatmap}\n")
     print(f"heatmap_reduced: \n{heatmap_reduced}\n")
     mask = heatmap_reduced > heatmap_threshold # [batch_size x H x W] tensor `mask`
-    print(f"indices: \n {(mask).nonzero(as_tuple=False)}")
+    #print(f"indices: \n {(mask).nonzero(as_tuple=False)}")
     heatmap_masked = torch.masked_select(heatmap_reduced, mask)  # 1-D tensor with only valid elements
     print(f"heatmap_threshold: {heatmap_threshold}\n")
-    print(f"heatmap_masked: \n {torch.all((heatmap_masked > heatmap_threshold))}")
+    print(f"heatmap_masked: \n {heatmap_threshold[mask]}")
     l2_norm_masked = torch.masked_select(l2_norm, mask)  # same order corresponding to heatmap_masked elements
-    
+    print(f"l2norm_masked: \n {l2_norm[mask]}")
     # torch.sum(
     #         heatmap * torch.square(predictions - targets)
     #         + torch.tensor(0, dtype=float),
