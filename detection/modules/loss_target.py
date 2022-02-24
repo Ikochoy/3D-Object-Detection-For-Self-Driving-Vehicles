@@ -110,7 +110,7 @@ class DetectionLossTargetBuilder:
         W_coords, H_coords = torch.arange(W), torch.arange(H)
         H_grid_coords, W_grid_coords = torch.meshgrid(H_coords, W_coords, indexing="ij")
         grid_coords = torch.stack([W_grid_coords, H_grid_coords], dim=-1)  # [H x W x 2]
-
+        print(f"grid coords: \n {grid_coords}\n")
         # 2. Create heatmap training targets by invoking the `create_heatmap` function.
         center = torch.tensor([cx, cy])
         scale = (x_size ** 2 + y_size ** 2) / self._heatmap_norm_scale
@@ -159,6 +159,10 @@ class DetectionLossTargetBuilder:
        # print(f"sin, cos\n {math.sin(yaw), math.cos(yaw)} \n headings \n {headings[index_mask.t()[0], index_mask.t()[1]]}\n")
         #print(headings)
         # 6. Concatenate training targets into a [7 x H x W] tensor.
+        print(heatmap[:, :, None].shape)
+        print(offsets.shape)
+        print(sizes.shape)
+        print(headings.shape)
         targets = torch.cat([heatmap[:, :, None], offsets, sizes, headings], dim=-1)
         return targets.permute(2, 0, 1)  # [7 x H x W]
 

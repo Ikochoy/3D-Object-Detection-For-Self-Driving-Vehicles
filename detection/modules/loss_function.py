@@ -36,31 +36,31 @@ def heatmap_weighted_mse_loss(
     #l2_norm = torch.linalg.norm(predictions-targets, dim=1)
     #print(f"heaTMAP size: {heatmap.shape}")
     l2_norm = torch.sum(torch.square(predictions - targets), dim=1, keepdim=True).reshape(b, h, w)
-    print(f"l2norm\n{l2_norm}\n")
+    #print(f"l2norm\n{l2_norm}\n")
      # [batch_size x H x W] tensor `mse_loss`
     #l2_norm = torch.linalg.norm(predictions-targets, dim=1)
     #print(f"l2_norm size: {l2_norm.shape}")
     heatmap_reduced = torch.sum(heatmap, dim=1)  # reducing dimension
     #print(f"heatmap_reduced: {heatmap_reduced.shape}")
-    print(f"heatmap: \n{heatmap}\n")
-    print(f"heatmap_reduced: \n{heatmap_reduced}\n")
+    #print(f"heatmap: \n{heatmap}\n")
+    #print(f"heatmap_reduced: \n{heatmap_reduced}\n")
     mask = heatmap_reduced > heatmap_threshold # [batch_size x H x W] tensor `mask`
     #print(f"indices: \n {(mask).nonzero(as_tuple=False)}")
     heatmap_masked = torch.masked_select(heatmap_reduced, mask)  # 1-D tensor with only valid elements
-    print(f"heatmap_threshold: {heatmap_threshold}\n")
-    print(f"heatmap_masked: \n {heatmap_reduced[mask]}")
+    #print(f"heatmap_threshold: {heatmap_threshold}\n")
+    #print(f"heatmap_masked: \n {heatmap_reduced[mask]}")
     l2_norm_masked = torch.masked_select(l2_norm, mask)  # same order corresponding to heatmap_masked elements
     #print(torch.mean(heatmap_masked * l2_norm_masked))
     #print(torch.sum(heatmap_masked * l2_norm_masked)/(heatmap_masked.shape[0]))
-    print(f"l2norm_masked: \n {l2_norm[mask]}")
-    print(torch.mul(heatmap_masked, l2_norm_masked).sum()/(heatmap_masked.shape[0]))
+    #print(f"l2norm_masked: \n {l2_norm[mask]}")
+    #print(torch.mul(heatmap_masked, l2_norm_masked).sum()/(heatmap_masked.shape[0]))
     # torch.sum(
     #         heatmap * torch.square(predictions - targets)
     #         + torch.tensor(0, dtype=float),
     #         dim=1,
     #         keepdim=True,
     #     ).reshape(batch_size, H, W)
-    print(torch.mean(heatmap_masked * l2_norm_masked))
+    #print(torch.mean(heatmap_masked * l2_norm_masked))
     return torch.mean(heatmap_masked * l2_norm_masked) # average of element-wise multiplied masked entries
 
 
