@@ -30,18 +30,16 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
         An [H x W] heatmap tensor, normalized such that its peak is 1.
     """
 
-    # grid_coords.shape == (h, w, 2)
-    # center == (cx, cy)
-    h, w, _ = grid_coords.shape
+    # grid_coords.shape == (h, w, 2)  which is [400, 608]
+    # print(grid_coords[0, 1])  # gives tensor([1, 0])
+    # center == (cx, cy)  e.g. [576.9950, 165.3658]
 
-    def gaussian(tensor_row):
-        #print(tensor_row[0], center[0], tensor_row[1], center[1])
-        return math.exp(-((tensor_row[0].item() - center[0].item())**2 + (tensor_row[1].item() - center[1].item())**2 / scale))
-
-    tensor = grid_coords.clone().detach()
-    tensor_reshaped = tensor.reshape(h * w, 2)
-    gaussianed = torch.exp(torch.neg(torch.square(tensor_reshaped[:,0] - center[0]) + torch.square(tensor_reshaped[:, 1] - center[1])) / scale)
-    gaussianed = gaussianed.reshape(h, w)  # stack -> h*w, 1
+    # tensor = grid_coords.clone().detach()
+    # tensor_reshaped = tensor.reshape(h * w, 2)
+    # print("HERE")
+    # print(center)
+    gaussianed = torch.exp(torch.neg( (grid_coords[:, :, 0] - center[0])**2 + (grid_coords[:, :, 1] - center[1])**2 ) / scale)
+    # guassianed has shape [400, 608]
     
     # normalize with peak value being 1
     gaussianed = torch.div(gaussianed, gaussianed.max())
@@ -121,8 +119,12 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         offsets = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        values = torch.dstack([cx - index_mask[:, 0], cy - index_mask[:, 1]])
+        # print("ENTERING")
+        # print(index_mask[0])
+        # print(cx, cy)
+        values = torch.dstack([cy - index_mask[:, 0], cx - index_mask[:, 1]])
         values = torch.sum(values, dim=0)
+        # print(values[0])
         offsets.index_put_(tuple(index_mask.t()), values)
 
         # 4. Create box size training target.
@@ -134,8 +136,10 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         sizes = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        values = (torch.tensor([x_size, y_size])).repeat(index_mask.shape[0], 1)
-        sizes.index_put(tuple(index_mask.t()), values)
+
+        # print(x_size, y_size)  # x_size tends to be larger than y_size, meaning x_size should correspond to j which is width W
+        values = (torch.tensor([y_size, x_size])).repeat(index_mask.shape[0], 1)
+        sizes.index_put_(tuple(index_mask.t()), values)
         
 
         # 5. Create heading training targets.
@@ -149,7 +153,7 @@ class DetectionLossTargetBuilder:
         headings = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
         values = (torch.tensor([math.sin(yaw), math.cos(yaw)])).repeat(index_mask.shape[0], 1)
-        headings.index_put(tuple(index_mask.t()), values)
+        headings.index_put_(tuple(index_mask.t()), values)
 
         # 6. Concatenate training targets into a [7 x H x W] tensor.
         targets = torch.cat([heatmap[:, :, None], offsets, sizes, headings], dim=-1)
