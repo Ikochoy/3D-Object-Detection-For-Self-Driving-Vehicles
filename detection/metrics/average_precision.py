@@ -62,7 +62,45 @@ def compute_precision_recall_curve(
         A precision/recall curve.
     """
     # TODO: Replace this stub code.
-    return PRCurve(torch.zeros(0), torch.zeros(0))
+    precisions = []
+    recalls = []
+    for frame in frames:
+        # detections N labels L
+        detections, labels = frame.detections, frame.labels
+        tp, fn, fp = 0, 0, 0
+        # TODO: make distance to be N x L
+        N, L = detections.centroids.shape[0], labels.centroids.shape[0]
+        # distance should be a N x L matrix
+        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, L, 2) - labels.centroids.reshape(1, L, 2).expand(N, L, 2))**2).sum(axis=2))
+        #true_match_before2 = (distance < threshold).nonzero(as_tuple=False)
+        has_no_detections = [1] * L
+        detection_scores = detections.scores
+        for i in range(N):
+            for j in range(L):
+                if distances[i][j] > threshold:
+                    # distance is larger than threshold, so we can ignore this (i, j) pair
+                    continue
+                else:
+                    # check if no higher scoring for that label
+                    # get distances scores for this labels 
+                    label_j_distances = distances[:, j]
+                    detection_scores_j = detection_scores[label_j_distances <= threshold] 
+                    # compare current detection score with all the detection scores for label j that satisfies 1
+                    if detection_scores[i] >= torch.max(detection_scores_j):
+                        tp += 1
+                        has_no_detections[j] = 0
+                        # even if detection matches two labels, should only be considered as 1 count to tp, therefore, 
+                        # exit for loop once a match is found   
+                        break
+        fp = N - tp  
+        fn = sum(has_no_detections)
+        # precision
+        precision = tp/(tp+fp)
+        # recall
+        recall = tp/(tp+fn)
+        precisions.append(precision)
+        recalls.append(recall)
+    return PRCurve(torch.tensor(precisions).reshape(), torch.tensor(recalls))
 
 
 def compute_area_under_curve(curve: PRCurve) -> float:
@@ -81,7 +119,8 @@ def compute_area_under_curve(curve: PRCurve) -> float:
         The area under the curve, as defined above.
     """
     # TODO: Replace this stub code.
-    return torch.sum(curve.recall).item() * 0.0
+    recall_minus_1 = torch.cat((torch.tensor([0]),curve.recall[:-1]))
+    return torch.sum((curve.recall-recall_minus_1)*curve.precision).item()
 
 
 def compute_average_precision(
@@ -98,4 +137,6 @@ def compute_average_precision(
         A dataclass consisting of a PRCurve and its average precision.
     """
     # TODO: Replace this stub code.
-    return AveragePrecisionMetric(0.0, PRCurve(torch.zeros(0), torch.zeros(0)))
+    pr_curve = compute_precision_recall_curve(frames, threshold)
+    ap = compute_area_under_curve(pr_curve)
+    return AveragePrecisionMetric(ap, pr_curve)
