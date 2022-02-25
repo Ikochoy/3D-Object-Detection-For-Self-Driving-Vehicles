@@ -64,6 +64,10 @@ def overfit(
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+        # if idx % 100 == 0:
+        #     print("PRINTING tensors")
+        #     print(bev_targets)
+        #     print(predictions)
 
         # inference on the training example, and save vis results
         if (idx + 1) % log_frequency == 0:
@@ -75,6 +79,59 @@ def overfit(
                 f"Size Loss - {loss_metadata.size_loss.item():.4f} "
                 f"Heading Loss - {loss_metadata.heading_loss.item():.4f} "
             )
+
+            # visualize bev_target channels
+            target_offset_x = bev_targets[0, 1].cpu().detach().numpy()
+            plt.matshow(target_offset_x, origin="lower")
+            plt.savefig(f"{output_root}/target_offset_x.png")
+
+            target_offset_y = bev_targets[0, 2].cpu().detach().numpy()
+            plt.matshow(target_offset_y, origin="lower")
+            plt.savefig(f"{output_root}/target_offset_y.png")
+
+            target_size_x = bev_targets[0, 3].cpu().detach().numpy()
+            plt.matshow(target_size_x, origin="lower")
+            plt.savefig(f"{output_root}/target_size_x.png")
+
+            target_size_y = bev_targets[0, 4].cpu().detach().numpy()
+            plt.matshow(target_size_y, origin="lower")
+            plt.savefig(f"{output_root}/target_size_y.png")
+
+            target_heading_s = bev_targets[0, 5].cpu().detach().numpy()
+            plt.matshow(target_heading_s, origin="lower")
+            plt.savefig(f"{output_root}/target_heading_s.png")
+
+            target_heading_c = bev_targets[0, 6].cpu().detach().numpy()
+            plt.matshow(target_heading_c, origin="lower")
+            plt.savefig(f"{output_root}/target_heading_c.png")
+
+    # pred
+            target_offset_x = predictions[0, 1].cpu().detach().numpy()
+            plt.matshow(target_offset_x, origin="lower")
+            plt.savefig(f"{output_root}/predictions_offset_x.png")
+
+            target_offset_y = predictions[0, 2].cpu().detach().numpy()
+            plt.matshow(target_offset_y, origin="lower")
+            plt.savefig(f"{output_root}/predictions_offset_y.png")
+
+            target_size_x = predictions[0, 3].cpu().detach().numpy()
+            plt.matshow(target_size_x, origin="lower")
+            plt.savefig(f"{output_root}/predictions_size_x.png")
+
+            target_size_y = predictions[0, 4].cpu().detach().numpy()
+            plt.matshow(target_size_y, origin="lower")
+            plt.savefig(f"{output_root}/predictions_size_y.png")
+
+            target_heading_s = predictions[0, 5].cpu().detach().numpy()
+            plt.matshow(target_heading_s, origin="lower")
+            plt.savefig(f"{output_root}/predictions_heading_s.png")
+
+            target_heading_c = predictions[0, 6].cpu().detach().numpy()
+            plt.matshow(target_heading_c, origin="lower")
+            plt.savefig(f"{output_root}/predictions_heading_c.png")
+
+
+
 
             # visualize target heatmap
             target_heatmap = bev_targets[0, 0].cpu().detach().numpy()
