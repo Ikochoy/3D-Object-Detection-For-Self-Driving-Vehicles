@@ -1,11 +1,3 @@
-from dataclasses import dataclass
-from typing import List
-
-import torch
-
-from detection.metrics.types import EvaluationFrame
-
-
 @dataclass
 class PRCurve:
     """A precision/recall curve.
@@ -62,7 +54,61 @@ def compute_precision_recall_curve(
         A precision/recall curve.
     """
     # TODO: Replace this stub code.
-    return PRCurve(torch.zeros(0), torch.zeros(0))
+    precisions = []
+    recalls = []
+    matchings = {}
+    for i, frame in enumerate(frames):
+        # construct a score and tp, and fn vector
+        detections, labels = frame.detections, frame.labels
+        N, M = detections.centroids.shape[0], labels.centroids.shape[0]
+        scores = detections.scores
+        tp, fn = [0] * N, [0] * M
+        label_not_assigned = [1] * M
+        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, L, 2) - labels.centroids.reshape(1, L, 2).expand(N, L, 2))**2).sum(axis=2))
+        for i in range(N):
+            for j in range(M):
+                if distances[i][j] > threshold:
+                    continue
+                else：
+                    # one label can only be assigned to a detection
+                    label_j_distances = distances[:, j]
+                    detection_scores_j = detection_scores[label_j_distances <= threshold] 
+                    # compare current detection score with all the detection scores for label j that satisfies 1
+                    if detection_scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
+                        tp[i] = 1
+                        label_not_assigned[j] = 0
+                        # exit for loop once a match is found   
+                        break
+        fn = label_not_assigned
+        fp = 1 - tp
+        matchings[i] = (scores, tp, fp, fn)
+    
+
+    concat_scores, concat_tp, concat_fp, concat_fn = [], [], [], []
+    for i, (scores, tp, fp, fn) in matchings:
+        concat_scores.append(scores)
+        concat_tp.append(tp)
+        concat_fp.append(fp)
+        concat_fn.append(fn)
+
+    concat_scores = torch.tensor(concat_scores).reshape(-1)
+    concat_tp = torch.tensor(concat_tp).reshape(-1)
+    concat_fp = torch.tensor(concat_fp).reshape(-1)
+    concat_fn = torch.tensor(concat_fn).reshape(-1)    
+
+    scores_desc, indices = torch.sort(concat_scores, descending=True)
+    tp_desc = concat_tp[indices]
+    fp_desc = concat_tp[indices]
+    
+    topk_fn = torch.sum(cocnat_fn)
+    
+    for k in range(1, scores_desc.shape[0]):
+        topk_tp = torch.sum(tp[:k])
+        topk_fp = torch.sum(fp[:k])
+        precisions.append(topk_tp/(topk_tp+topk_fp))
+        recalls.append(topk_tp/(topk_tp + topk_fn))
+    
+    return PRCurve(torch.tensor(precisions)), torch.tensor(recalls))
 
 
 def compute_area_under_curve(curve: PRCurve) -> float:
@@ -81,7 +127,8 @@ def compute_area_under_curve(curve: PRCurve) -> float:
         The area under the curve, as defined above.
     """
     # TODO: Replace this stub code.
-    return torch.sum(curve.recall).item() * 0.0
+    recall_minus_1 = torch.cat((torch.tensor([0]),curve.recall[:-1]))
+    return torch.sum((curve.recall-recall_minus_1)*curve.precision).item()
 
 
 def compute_average_precision(
@@ -98,4 +145,7 @@ def compute_average_precision(
         A dataclass consisting of a PRCurve and its average precision.
     """
     # TODO: Replace this stub code.
-    return AveragePrecisionMetric(0.0, PRCurve(torch.zeros(0), torch.zeros(0)))
+    pr_curve = compute_precision_recall_curve(frames, threshold)
+    ap = compute_area_under_curve(pr_curve)
+    return AveragePrecisionMetric(ap, pr_curve)
+
