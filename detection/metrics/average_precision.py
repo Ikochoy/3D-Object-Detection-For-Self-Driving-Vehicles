@@ -70,8 +70,8 @@ def compute_precision_recall_curve(
         detections, labels = frame.detections, frame.labels
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
         scores = detections.scores
-        tp, fn = [0] * N, [0] * M
-        label_not_assigned = [1] * M
+        tp, fn = torch.tensor([0] * N), torch.tensor([0] * M)
+        label_not_assigned = torch.tensor([1] * M)
         distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
         for i in range(N):
             for j in range(M):
@@ -88,7 +88,7 @@ def compute_precision_recall_curve(
                         # exit for loop once a match is found   
                         break
         fn = label_not_assigned
-        fp = list(1-torch.tensor(tp))
+        fp = 1-torch.tensor(tp)
         matchings[i] = (scores, tp, fp, fn)
     
 
@@ -99,10 +99,10 @@ def compute_precision_recall_curve(
         concat_fp.append(fp)
         concat_fn.append(fn)
 
-    concat_scores = torch.tensor(concat_scores).reshape(-1)
-    concat_tp = torch.tensor(concat_tp).reshape(-1)
-    concat_fp = torch.tensor(concat_fp).reshape(-1)
-    concat_fn = torch.tensor(concat_fn).reshape(-1)    
+    concat_scores = torch.stack(concat_scores).reshape(-1)
+    concat_tp = torch.stack(concat_tp).reshape(-1)
+    concat_fp = torch.stack(concat_fp).reshape(-1)
+    concat_fn = torch.stack(concat_fn).reshape(-1)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
