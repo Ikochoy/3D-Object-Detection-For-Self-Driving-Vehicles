@@ -69,7 +69,7 @@ def compute_precision_recall_curve(
             for j in range(M):
                 if distances[i][j] > threshold:
                     continue
-                else：
+                else:
                     # one label can only be assigned to a detection
                     label_j_distances = distances[:, j]
                     detection_scores_j = detection_scores[label_j_distances <= threshold] 
