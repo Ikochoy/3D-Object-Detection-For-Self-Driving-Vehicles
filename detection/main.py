@@ -248,6 +248,7 @@ def train(
                 plt.close("all")
 
         torch.save(model.state_dict(), f"{output_root}/{epoch:03d}.pth")
+    evaluate(data_root, output_root, checkpoint_path=f"{output_root}/{num_epochs-1:03d}.pth")
 
 
 @torch.no_grad()
@@ -296,6 +297,7 @@ def test(
         visualize_detections(lidar, detections, labels[0])
         plt.savefig(f"{output_root}/{idx:03d}.png")
         plt.close("all")
+
 
 
 @torch.no_grad()
