@@ -99,16 +99,16 @@ def compute_precision_recall_curve(
         concat_fp.append(fp)
         concat_fn.append(fn)
 
-    concat_scores = torch.stack(concat_scores).reshape(-1)
-    concat_tp = torch.stack(concat_tp).reshape(-1)
-    concat_fp = torch.stack(concat_fp).reshape(-1)
-    concat_fn = torch.stack(concat_fn).reshape(-1)    
+    concat_scores = torch.cat(concat_scores)
+    concat_tp = torch.cat(concat_tp)
+    concat_fp = torch.cat(concat_fp)
+    concat_fn = torch.cat(concat_fn)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
     fp_desc = concat_tp[indices]
     
-    topk_fn = torch.sum(cocnat_fn)
+    topk_fn = torch.sum(concat_fn)
     
     for k in range(1, scores_desc.shape[0]):
         topk_tp = torch.sum(tp[:k])
