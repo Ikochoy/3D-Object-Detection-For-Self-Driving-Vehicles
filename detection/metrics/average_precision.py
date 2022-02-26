@@ -80,20 +80,20 @@ def compute_precision_recall_curve(
                 else:
                     # one label can only be assigned to a detection
                     label_j_distances = distances[:, j]
-                    detection_scores_j = detection_scores[label_j_distances <= threshold] 
+                    detection_scores_j = scores[label_j_distances <= threshold] 
                     # compare current detection score with all the detection scores for label j that satisfies 1
-                    if detection_scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
+                    if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
                         tp[i] = 1
                         label_not_assigned[j] = 0
                         # exit for loop once a match is found   
                         break
         fn = label_not_assigned
-        fp = 1 - tp
+        fp = list(1-torch.tensor(tp))
         matchings[i] = (scores, tp, fp, fn)
     
 
     concat_scores, concat_tp, concat_fp, concat_fn = [], [], [], []
-    for i, (scores, tp, fp, fn) in matchings:
+    for i, (scores, tp, fp, fn) in matchings.items():
         concat_scores.append(scores)
         concat_tp.append(tp)
         concat_fp.append(fp)
