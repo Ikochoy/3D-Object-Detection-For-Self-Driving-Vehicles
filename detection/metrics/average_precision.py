@@ -72,7 +72,7 @@ def compute_precision_recall_curve(
         scores = detections.scores
         tp, fn = [0] * N, [0] * M
         label_not_assigned = [1] * M
-        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, L, 2) - labels.centroids.reshape(1, L, 2).expand(N, L, 2))**2).sum(axis=2))
+        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
         for i in range(N):
             for j in range(M):
                 if distances[i][j] > threshold:
