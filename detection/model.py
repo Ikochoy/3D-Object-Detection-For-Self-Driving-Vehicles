@@ -134,7 +134,7 @@ class DetectionModel(nn.Module):
         mask = (X_heatmap >= maxpool(X_heatmap)) # 1 x H X W
         five_by_five_max = (mask).nonzero(as_tuple=False) # M x 2
         five_by_five_max = five_by_five_max[:, 1:] # M x 2
-        # five_by_five_max = torch.stack([five_by_five_max[:, 1], five_by_five_max[:, 0]], dim=1)
+        five_by_five_max = torch.stack([five_by_five_max[:, 1], five_by_five_max[:, 0]], dim=1)
 
         values = torch.masked_select(X_heatmap, mask) # M x 1
 
@@ -146,14 +146,15 @@ class DetectionModel(nn.Module):
         chosen_scores = kvalues[idx]
         topk_fivebyfive = five_by_five_max[indices] # K X 2
 
-        masked_offsets = X_offsets[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        masked_offsets = X_offsets[:, topk_fivebyfive.t()[1], topk_fivebyfive.t()[0]]
         topk_fivebyfive_offsets = topk_fivebyfive + masked_offsets.t()
         
         # not sure whether the way of index is correct
-        sizes = X_sizes[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        sizes = X_sizes[:, topk_fivebyfive.t()[1], topk_fivebyfive.t()[0]]
+        sizes = torch.stack([sizes[1], sizes[0]], dim=0)
 
         # not sure whether the way of index is correct
-        headings = X_headings[:, topk_fivebyfive.t()[0], topk_fivebyfive.t()[1]]
+        headings = X_headings[:, topk_fivebyfive.t()[1], topk_fivebyfive.t()[0]]
         new_angles = torch.atan2(headings[0], headings[1])
 
         # return Detections(
