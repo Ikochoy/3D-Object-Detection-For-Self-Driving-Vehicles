@@ -1,3 +1,11 @@
+from dataclasses import dataclass
+from typing import List
+
+import torch
+
+from detection.metrics.types import EvaluationFrame
+
+
 @dataclass
 class PRCurve:
     """A precision/recall curve.
@@ -108,7 +116,7 @@ def compute_precision_recall_curve(
         precisions.append(topk_tp/(topk_tp+topk_fp))
         recalls.append(topk_tp/(topk_tp + topk_fn))
     
-    return PRCurve(torch.tensor(precisions)), torch.tensor(recalls))
+    return PRCurve(torch.tensor(precisions), torch.tensor(recalls))
 
 
 def compute_area_under_curve(curve: PRCurve) -> float:
