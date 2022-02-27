@@ -88,7 +88,7 @@ def compute_precision_recall_curve(
                         # exit for loop once a match is found   
                         break
         fn = label_not_assigned
-        fp = 1-torch.tensor(tp)
+        fp = 1 - tp
         matchings[i] = (scores, tp, fp, fn)
     
 
@@ -106,13 +106,13 @@ def compute_precision_recall_curve(
 
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
-    fp_desc = concat_tp[indices]
+    fp_desc = concat_fp[indices]
     
     topk_fn = torch.sum(concat_fn)
     
     for k in range(1, scores_desc.shape[0]):
-        topk_tp = torch.sum(tp[:k])
-        topk_fp = torch.sum(fp[:k])
+        topk_tp = torch.sum(tp_desc[:k])
+        topk_fp = torch.sum(fp_desc[:k])
         precisions.append(topk_tp/(topk_tp+topk_fp))
         recalls.append(topk_tp/(topk_tp + topk_fn))
     
