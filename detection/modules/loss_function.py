@@ -36,10 +36,23 @@ def heatmap_weighted_mse_loss(
 
     heatmap_reduced = torch.sum(heatmap, dim=1)  # reducing dimension
     mask = heatmap_reduced > heatmap_threshold  # [batch_size x H x W] tensor `mask`
-
     heatmap_masked = torch.masked_select(heatmap_reduced, mask)  # 1-D tensor with only valid elements
     l2_norm_masked = torch.masked_select(l2_norm, mask)  # same order corresponding to heatmap_masked elements
     return torch.mean(heatmap_masked * l2_norm_masked) # average of element-wise multiplied masked entries
+
+
+def heatmap_focal_loss(targets: Tensor, predictions: Tensor, heatmap: Tensor, heatmap_threshold: float, gamma: float, alpha: float):
+    mask = heatmap > heatmap_threshold
+    predictions_masked = predictions[masked]
+    targets_masked = targets[masked]
+    p = torch.sigmoid(predictions_masked)
+    # p_t = p when target = 1 and 1-p when target = 0
+    p_t = p * targets_masked + (1-p) * (1- targets_masked)
+    criterion = torch.nn.CrossEntropyLoss()
+    ce = criterion(p_t, targets_masked)
+    alpha_t = alpha * targets_masked + (1-alpha) * (1 - targets_masked)
+    focal_loss = alpha_t * (1-p_t)**(gamma) * ce
+    return focal_loss
 
 
 @dataclass
