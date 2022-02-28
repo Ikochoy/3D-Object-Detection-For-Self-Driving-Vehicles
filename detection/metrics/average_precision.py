@@ -65,13 +65,14 @@ def compute_precision_recall_curve(
     precisions = []
     recalls = []
     matchings = {}
-    for i, frame in enumerate(frames):
+    for w, frame in enumerate(frames):
         # construct a score and tp, and fn vector
         detections, labels = frame.detections, frame.labels
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
         scores = detections.scores
         tp, fn = torch.tensor([0] * N), torch.tensor([0] * M)
         label_not_assigned = torch.tensor([1] * M)
+        # check the distance whether is it correct
         distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
         for i in range(N):
             for j in range(M):
@@ -89,7 +90,7 @@ def compute_precision_recall_curve(
                         break
         fn = label_not_assigned
         fp = 1 - tp
-        matchings[i] = (scores, tp, fp, fn)
+        matchings[w] = (scores, tp, fp, fn)
     
 
     concat_scores, concat_tp, concat_fp, concat_fn = [], [], [], []
@@ -113,8 +114,10 @@ def compute_precision_recall_curve(
     for k in range(1, scores_desc.shape[0]):
         topk_tp = torch.sum(tp_desc[:k])
         topk_fp = torch.sum(fp_desc[:k])
-        precisions.append(topk_tp/(topk_tp+topk_fp))
-        recalls.append(topk_tp/(topk_tp + topk_fn))
+        # topk_tp + topk_fp should be equivalent to k
+        precisions.append(topk_tp/(k))
+        # total number of labels it should be torch.sum(tp_desc) + torch.sum(concat_fn)
+        recalls.append(topk_tp/(torch.sum(tp_desc)+torch.sum(concat_fn)))
     
     return PRCurve(torch.tensor(precisions), torch.tensor(recalls))
 
