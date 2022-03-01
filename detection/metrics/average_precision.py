@@ -5,7 +5,7 @@ import torch
 
 from detection.metrics.types import EvaluationFrame
 
-
+torch.multiprocessing.set_sharing_strategy('file_system')
 @dataclass
 class PRCurve:
     """A precision/recall curve.
@@ -72,25 +72,23 @@ def compute_precision_recall_curve(
 
         # sort scores
         scores, idx_for_desc = torch.sort(detections.scores, descending=True)
-        # sort detections in desc order of scores by idx_for_desc
-        detections.centroids = detections.centroids[idx_for_desc]
-        detections.yaws = detections.yaws[idx_for_desc]
-        detections.boxes = detections.boxes[idx_for_desc]
-        detections.scores = scores
+        centroids = detections.centroids[idx_for_desc]
 
-        tp, fn = torch.tensor([0] * N), torch.tensor([0] * M)
+        tp = torch.tensor([0] * N)
         label_not_assigned = torch.tensor([1] * M)
         # check the distance whether is it correct
-        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
-        for i in range(N):  # for each detection
+        distances = torch.sqrt(((centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
+        for i in range(N):  # for each detection starting from the detection with the greatest score
+            # get all the distances between detection i and all the labels
             distance_i = distances[i]  # get min distance idx from distances[i] -> closest_idx
-            _ , idx_distance_order = torch.sort(distance_i, descending=False)
-            j = idx_distance_order[0].item()
-            if distances[i][j] > threshold:
-                continue
-            else:
+            #_ , idx_distance_order = torch.sort(distance_i, descending=False)
+            # get the index of the label which has the closest distance
+            j = torch.argmin(distance_i)
+            if distances[i][j] < threshold:
                 # one label can only be assigned to a detection
+                # get the distances between all the detections and selected label
                 label_j_distances = distances[:, j]
+                # get all the scores from detections that has distance smaller than threshold with label j
                 detection_scores_j = scores[label_j_distances <= threshold] 
                 # compare current detection score with all the detection scores for label j that satisfies 1
                 if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
@@ -98,29 +96,28 @@ def compute_precision_recall_curve(
                     label_not_assigned[j] = 0
                     
         fn = label_not_assigned
-        fp = 1 - tp
-        matchings[w] = (scores, tp, fp, fn)
+        matchings[w] = (scores, tp, fn)
 
         # highest detection score & lowest distance
         # for each detection D: closest label L (if not taken yet) ->  else-case
         # sort detections by their scores, for unassigned label etc.
     
 
-    concat_scores, concat_tp, concat_fp, concat_fn = [], [], [], []
-    for i, (scores, tp, fp, fn) in matchings.items():
+    concat_scores, concat_tp, concat_fn = [], [], [], []
+    for key, (scores, tp fn) in matchings.items():
         concat_scores.append(scores)
         concat_tp.append(tp)
-        concat_fp.append(fp)
         concat_fn.append(fn)
 
     concat_scores = torch.cat(concat_scores)
     concat_tp = torch.cat(concat_tp)
-    concat_fp = torch.cat(concat_fp)
     concat_fn = torch.cat(concat_fn)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
-    fp_desc = concat_fp[indices]
+    fp_desc = 1 - tp_desc
+    print(tp_desc)
+    print(fp_desc)
     
     topk_fn = torch.sum(concat_fn)
     
