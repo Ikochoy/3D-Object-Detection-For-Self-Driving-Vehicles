@@ -121,6 +121,8 @@ def compute_precision_recall_curve(
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
     fp_desc = concat_fp[indices]
+    print(tp_desc)
+    print(fp_desc)
     
     topk_fn = torch.sum(concat_fn)
     
