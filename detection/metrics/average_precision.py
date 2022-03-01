@@ -82,7 +82,7 @@ def compute_precision_recall_curve(
         for i in range(N):  # for each detection
             distance_i = distances[i]  # get min distance idx from distances[i] -> closest_idx
             #_ , idx_distance_order = torch.sort(distance_i, descending=False)
-            j = torch.min(distance_i)
+            j = torch.argmin(distance_i)
             if distances[i][j] > threshold:
                 continue
             else:
