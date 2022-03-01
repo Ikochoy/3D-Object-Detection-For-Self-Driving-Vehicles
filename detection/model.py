@@ -139,7 +139,7 @@ class DetectionModel(nn.Module):
         values = torch.masked_select(X_heatmap, mask) # M x 1
 
         # kvalues -- s , topk_fivebyfive is the (i, j)
-        kvalues, indices = torch.topk(values, k) # K X 1
+        kvalues, indices = torch.topk(values, min(k, values.shape[0])) # K X 1
         idx = (kvalues > score_threshold).nonzero(as_tuple=False)
         indices = indices[idx].flatten() #
 

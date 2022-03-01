@@ -69,28 +69,41 @@ def compute_precision_recall_curve(
         # construct a score and tp, and fn vector
         detections, labels = frame.detections, frame.labels
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
-        scores = detections.scores
+
+        # sort scores
+        scores, idx_for_desc = torch.sort(detections.scores, descending=True)
+        # sort detections in desc order of scores by idx_for_desc
+        detections.centroids = detections.centroids[idx_for_desc]
+        detections.yaws = detections.yaws[idx_for_desc]
+        detections.boxes = detections.boxes[idx_for_desc]
+        detections.scores = scores
+
         tp, fn = torch.tensor([0] * N), torch.tensor([0] * M)
         label_not_assigned = torch.tensor([1] * M)
         # check the distance whether is it correct
         distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
-        for i in range(N):
-            for j in range(M):
-                if distances[i][j] > threshold:
-                    continue
-                else:
-                    # one label can only be assigned to a detection
-                    label_j_distances = distances[:, j]
-                    detection_scores_j = scores[label_j_distances <= threshold] 
-                    # compare current detection score with all the detection scores for label j that satisfies 1
-                    if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
-                        tp[i] = 1
-                        label_not_assigned[j] = 0
-                        # exit for loop once a match is found   
-                        break
+        for i in range(N):  # for each detection
+            distance_i = distances[i]  # get min distance idx from distances[i] -> closest_idx
+            _ , idx_distance_order = torch.sort(distance_i, descending=False)
+            j = idx_distance_order[0].item()
+            if distances[i][j] > threshold:
+                continue
+            else:
+                # one label can only be assigned to a detection
+                label_j_distances = distances[:, j]
+                detection_scores_j = scores[label_j_distances <= threshold] 
+                # compare current detection score with all the detection scores for label j that satisfies 1
+                if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
+                    tp[i] = 1
+                    label_not_assigned[j] = 0
+                    
         fn = label_not_assigned
         fp = 1 - tp
         matchings[w] = (scores, tp, fp, fn)
+
+        # highest detection score & lowest distance
+        # for each detection D: closest label L (if not taken yet) ->  else-case
+        # sort detections by their scores, for unassigned label etc.
     
 
     concat_scores, concat_tp, concat_fp, concat_fn = [], [], [], []
