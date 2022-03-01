@@ -72,20 +72,17 @@ def compute_precision_recall_curve(
 
         # sort scores
         scores, idx_for_desc = torch.sort(detections.scores, descending=True)
-        # sort detections in desc order of scores by idx_for_desc
-        detections.centroids = detections.centroids[idx_for_desc]
-        detections.yaws = detections.yaws[idx_for_desc]
-        detections.boxes = detections.boxes[idx_for_desc]
-        detections.scores = scores
+        centroids = detections.centroids[idx_for_desc]
 
-        tp, fn = torch.tensor([0] * N), torch.tensor([0] * M)
+        tp = torch.tensor([0] * N)
         label_not_assigned = torch.tensor([1] * M)
         # check the distance whether is it correct
-        distances = torch.sqrt(((detections.centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
+        #distances = torch.sqrt(((centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
+        distances = torch.cdist(centroids[None].flatten(2), labels.centroids[None].flatten(2))[0]
         for i in range(N):  # for each detection
             distance_i = distances[i]  # get min distance idx from distances[i] -> closest_idx
-            _ , idx_distance_order = torch.sort(distance_i, descending=False)
-            j = idx_distance_order[0].item()
+            #_ , idx_distance_order = torch.sort(distance_i, descending=False)
+            j = torch.min(distance_i)
             if distances[i][j] > threshold:
                 continue
             else:
