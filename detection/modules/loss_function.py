@@ -43,15 +43,20 @@ def heatmap_weighted_mse_loss(
 
 def heatmap_focal_loss(targets: Tensor, predictions: Tensor, heatmap: Tensor, heatmap_threshold: float, gamma: float, alpha: float):
     mask = heatmap > heatmap_threshold
-    predictions_masked = predictions[masked]
-    targets_masked = targets[masked]
+    predictions_masked = torch.masked_select(predictions, mask)
+    targets_masked = torch.masked_select(targets, mask)
+
     p = torch.sigmoid(predictions_masked)
     # p_t = p when target = 1 and 1-p when target = 0
-    p_t = p * targets_masked + (1-p) * (1- targets_masked)
-    criterion = torch.nn.CrossEntropyLoss()
+    p_t = p * targets_masked + (1-p) * (1- targets_masked)  # our problem isn't binary classification
+
+    p_t = torch.sigmoid(p_t)
+
+    # unable to use because CrssEntropyLoss gives scaler?
+    criterion = torch.nn.BCELoss(reduction='none')  # to output vector ce
     ce = criterion(p_t, targets_masked)
     alpha_t = alpha * targets_masked + (1-alpha) * (1 - targets_masked)
-    focal_loss = alpha_t * (1-p_t)**(gamma) * ce
+    focal_loss = torch.mean(alpha_t * (1-p_t)**(gamma) * ce)
     return focal_loss
 
 
@@ -130,14 +135,28 @@ class DetectionLossFunction(torch.nn.Module):
 
         # 3. Compute individual loss terms for heatmap, offset, size, and heading.
         heatmap_loss = ((target_heatmap - predicted_heatmap) ** 2).mean()
-        offset_loss = heatmap_weighted_mse_loss(
-            target_offsets, predicted_offsets, target_heatmap, self._heatmap_threshold
+        # offset_loss = heatmap_weighted_mse_loss(
+        #     target_offsets, predicted_offsets, target_heatmap, self._heatmap_threshold
+        # )
+        # size_loss = heatmap_weighted_mse_loss(
+        #     target_sizes, predicted_sizes, target_heatmap, self._heatmap_threshold
+        # )
+        # heading_loss = heatmap_weighted_mse_loss(
+        #     target_headings, predicted_headings, target_heatmap, self._heatmap_threshold
+        # )
+
+        # focal loss
+        gamma = 2.0
+        alpha = 0.25
+
+        offset_loss = heatmap_focal_loss(
+            target_offsets, predicted_offsets, target_heatmap, self._heatmap_threshold, gamma, alpha
         )
-        size_loss = heatmap_weighted_mse_loss(
-            target_sizes, predicted_sizes, target_heatmap, self._heatmap_threshold
+        size_loss = heatmap_focal_loss(
+            target_sizes, predicted_sizes, target_heatmap, self._heatmap_threshold, gamma, alpha
         )
-        heading_loss = heatmap_weighted_mse_loss(
-            target_headings, predicted_headings, target_heatmap, self._heatmap_threshold
+        heading_loss = heatmap_focal_loss(
+            target_headings, predicted_headings, target_heatmap, self._heatmap_threshold, gamma, alpha
         )
 
         # 4. Aggregate losses using the configured weights.
