@@ -5,7 +5,7 @@ import torch
 
 from detection.metrics.types import EvaluationFrame
 
-
+torch.multiprocessing.set_sharing_strategy('file_system')
 @dataclass
 class PRCurve:
     """A precision/recall curve.
