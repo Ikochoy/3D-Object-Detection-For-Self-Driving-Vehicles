@@ -125,8 +125,8 @@ class DetectionLossTargetBuilder:
         scale_x = 2*(x_size**2) / self._heatmap_norm_scale
         scale_y = 2*(y_size**2)/ self._heatmap_norm_scale
 
-        # heatmap = create_heatmap(grid_coords, center=center, scale=scale)  # [H x W]
-        heatmap = create_general_heatmap(grid_coords, center=center, scale_x=scale_x, scale_y=scale_y, headings=torch.tensor([math.sin(yaw), math.cos(yaw)]))  # [H x W]
+        heatmap = create_heatmap(grid_coords, center=center, scale=scale)  # [H x W]
+        # heatmap = create_general_heatmap(grid_coords, center=center, scale_x=scale_x, scale_y=scale_y, headings=torch.tensor([math.sin(yaw), math.cos(yaw)]))  # [H x W]
 
 
         # 3. Create offset training targets.

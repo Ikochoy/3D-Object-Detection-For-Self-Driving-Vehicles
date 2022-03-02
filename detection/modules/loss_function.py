@@ -41,21 +41,27 @@ def heatmap_weighted_mse_loss(
     return torch.mean(heatmap_masked * l2_norm_masked) # average of element-wise multiplied masked entries
 
 
-def heatmap_focal_loss(targets: Tensor, predictions: Tensor, heatmap: Tensor, heatmap_threshold: float, gamma: float, alpha: float):
+def heatmap_focal_loss(targets: Tensor, predictions: Tensor, gamma: float, alpha: float):
     # mask = heatmap > heatmap_threshold
     # predictions_masked = torch.masked_select(predictions, mask)
     # targets_masked = torch.masked_select(targets, mask)
+    # print("TARGETS", targets)
+    # print(targets.sum())
+    # print("PREDICTIONS", predictions)
+    
 
-    p = torch.sigmoid(predictions)
+    # p = torch.sigmoid(predictions)
     # p_t = p when target = 1 and 1-p when target = 0
+    p = predictions
     p_t = p * targets + (1-p) * (1- targets)  # our problem isn't binary classification
 
     # unable to use because CrssEntropyLoss gives scaler?
-    criterion = torch.nn.BCELoss(reduction='none')  # to output vector ce
-    ce = criterion(p, targets)
+    # criterion = torch.nn.B??(reduction='none')  # to output vector ce
+    # ce = criterion(predictions, targets)
     alpha_t = alpha * targets + (1-alpha) * (1 - targets)
-    focal_loss = torch.mean(alpha_t * (1-p_t)**(gamma) * ce)
-    return focal_loss
+    focal_loss = alpha_t * (1-p_t)**(gamma) * -(torch.log(p_t))
+    # focal_loss = alpha_t * (1-p_t)**(gamma) * ce
+    return focal_loss.mean()
 
 
 @dataclass
@@ -136,7 +142,8 @@ class DetectionLossFunction(torch.nn.Module):
         gamma = 2.0
         alpha = 0.25
 
-        heatmap_loss = ((target_heatmap - predicted_heatmap) ** 2).mean()
+        # heatmap_loss = ((target_heatmap - predicted_heatmap) ** 2).mean()
+        heatmap_loss = heatmap_focal_loss(target_heatmap, predicted_heatmap, gamma=gamma, alpha=alpha)
 
         offset_loss = heatmap_weighted_mse_loss(
             target_offsets, predicted_offsets, target_heatmap, self._heatmap_threshold
