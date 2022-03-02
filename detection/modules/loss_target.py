@@ -45,12 +45,15 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
     gaussianed = torch.div(gaussianed, gaussianed.max())
     return gaussianed
 
-def create_general_heatmap(grid_coords: Tensor, center: Tensor, scale_x: float, scale_y:float):
+def create_general_heatmap(grid_coords: Tensor, center: Tensor, scale_x: float, scale_y:float, headings: Tensor):
     x, y = grid_coords[:, :, 0], grid_coords[:, :, 1]
-    gaussianed = torch.exp(torch.neg((x-center[0])**2/scale_x + (y-center[1])**2/scale_y))
+    sin, cos = headings[:, 0], headings[:, 1]
+    a = cos**2/scale_x + sin**2/scale_y
+    b = (2*sin*cos)/(2*scale_x) + (2*sin*cos)/(2*scale_y) 
+    c = sin**2/scale_x + cos**2/scale_y
+    gaussianed = torch.exp(torch.neg(a*(x-center[0])**2 + c*(y-center[1])**2 + 2*b*(x-center[0])*(y-center[1])))
     gaussianed = torch.div(gaussianed, gaussianed.max())
     return gaussianed
-
 
 
 class DetectionLossTargetBuilder:
@@ -115,6 +118,8 @@ class DetectionLossTargetBuilder:
         # 2. Create heatmap training targets by invoking the `create_heatmap` function.
         center = torch.tensor([cx, cy])
         scale = (x_size ** 2 + y_size ** 2) / self._heatmap_norm_scale
+        scale_x = 2 * (x_size**2) / self._heatmap_norm_scale
+        scale_y = 2 * (y_size**2)/ self._heatmap_norm_scale
         heatmap = create_heatmap(grid_coords, center=center, scale=scale)  # [H x W]
 
         # 3. Create offset training targets.
