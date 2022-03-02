@@ -62,49 +62,41 @@ def compute_precision_recall_curve(
         A precision/recall curve.
     """
     # TODO: Replace this stub code.
+    # highest detection score & lowest distance
+    # for each detection D: closest label L (if not taken yet) ->  else-case
+    # sort detections by their scores, for unassigned label etc.
+
     precisions = []
     recalls = []
     matchings = {}
+    total_labels = 0
     for w, frame in enumerate(frames):
         # construct a score and tp, and fn vector
         detections, labels = frame.detections, frame.labels
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
-
+        total_labels += M
         # sort scores
         scores, idx_for_desc = torch.sort(detections.scores, descending=True)
-        centroids = detections.centroids[idx_for_desc]
-
+        centroids = detections.centroids[idx_for_desc] # detections are now sorted in the descending order of the scores
         tp = torch.tensor([0] * N)
         label_not_assigned = torch.tensor([1] * M)
-        # check the distance whether is it correct
         distances = torch.sqrt(((centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
         for i in range(N):  # for each detection starting from the detection with the greatest score
-            # get all the distances between detection i and all the labels
-            distance_i = distances[i]  # get min distance idx from distances[i] -> closest_idx
-            #_ , idx_distance_order = torch.sort(distance_i, descending=False)
-            # get the index of the label which has the closest distance
-            j = torch.argmin(distance_i)
-            if distances[i][j] < threshold:
-                # one label can only be assigned to a detection
-                # get the distances between all the detections and selected label
-                label_j_distances = distances[:, j]
-                # get all the scores from detections that has distance smaller than threshold with label j
-                detection_scores_j = scores[label_j_distances <= threshold] 
-                # compare current detection score with all the detection scores for label j that satisfies 1
-                if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
-                    tp[i] = 1
-                    label_not_assigned[j] = 0
-                    
+            distance_i = distances[i] # distances between detection i and all labels
+            # j = torch.argmin(distance_i)
+            for j in range(M): 
+                if distances[i][j] < threshold:
+                    label_j_distances = distances[:, j]
+                    detection_scores_j = scores[label_j_distances <= threshold] 
+                    if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1:
+                        tp[i] = 1
+                        label_not_assigned[j] = 0
+                        break
         fn = label_not_assigned
         matchings[w] = (scores, tp, fn)
 
-        # highest detection score & lowest distance
-        # for each detection D: closest label L (if not taken yet) ->  else-case
-        # sort detections by their scores, for unassigned label etc.
-    
-
     concat_scores, concat_tp, concat_fn = [], [], [], []
-    for key, (scores, tp fn) in matchings.items():
+    for key, (scores, tp, fn) in matchings.items():
         concat_scores.append(scores)
         concat_tp.append(tp)
         concat_fn.append(fn)
@@ -116,8 +108,6 @@ def compute_precision_recall_curve(
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
     fp_desc = 1 - tp_desc
-    print(tp_desc)
-    print(fp_desc)
     
     topk_fn = torch.sum(concat_fn)
     
@@ -125,8 +115,10 @@ def compute_precision_recall_curve(
         topk_tp = torch.sum(tp_desc[:k])
         topk_fp = torch.sum(fp_desc[:k])
         # topk_tp + topk_fp should be equivalent to k
+        print(topk_tp + topk_fp == k)
         precisions.append(topk_tp/(k))
         # total number of labels it should be torch.sum(tp_desc) + torch.sum(concat_fn)
+        print(torch.sum(tp_desc)+torch.sum(concat_fn) == total_labels)
         recalls.append(topk_tp/(torch.sum(tp_desc)+torch.sum(concat_fn)))
     
     return PRCurve(torch.tensor(precisions), torch.tensor(recalls))

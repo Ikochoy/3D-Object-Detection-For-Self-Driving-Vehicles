@@ -38,12 +38,19 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
     # tensor_reshaped = tensor.reshape(h * w, 2)
     # print("HERE")
     # print(center)
-    gaussianed = torch.exp(torch.neg( (grid_coords[:, :, 0] - center[0])**2 + (grid_coords[:, :, 1] - center[1])**2 ) / scale)
+    gaussianed = torch.exp(torch.neg((grid_coords[:, :, 0] - center[0])**2 + (grid_coords[:, :, 1] - center[1])**2 ) / scale)
     # guassianed has shape [400, 608]
     
     # normalize with peak value being 1
     gaussianed = torch.div(gaussianed, gaussianed.max())
     return gaussianed
+
+def create_general_heatmap(grid_coords: Tensor, center: Tensor, scale_x: float, scale_y:float):
+    x, y = grid_coords[:, :, 0], grid_coords[:, :, 1]
+    gaussianed = torch.exp(torch.neg((x-center[0])**2/scale_x + (y-center[1])**2/scale_y))
+    gaussianed = torch.div(gaussianed, gaussianed.max())
+    return gaussianed
+
 
 
 class DetectionLossTargetBuilder:
