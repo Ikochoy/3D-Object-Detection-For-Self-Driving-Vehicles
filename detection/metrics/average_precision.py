@@ -79,7 +79,7 @@ def compute_precision_recall_curve(
         scores, idx_for_desc = torch.sort(detections.scores, descending=True)
         centroids = detections.centroids[idx_for_desc] # detections are now sorted in the descending order of the scores
         tp = torch.tensor([0] * N)
-        label_not_assigned = torch.tensor([1] * M)
+        #label_assigned = torch.tensor([0] * M)
         distances = torch.sqrt(((centroids.reshape(N, 1, 2).expand(N, M, 2) - labels.centroids.reshape(1, M, 2).expand(N, M, 2))**2).sum(axis=2))
         for i in range(N):  # for each detection starting from the detection with the greatest score
             distance_i = distances[i] # distances between detection i and all labels
@@ -87,10 +87,10 @@ def compute_precision_recall_curve(
             if distances[i][j] <= threshold:
                 label_j_distances = distances[:, j]
                 detection_scores_j = scores[label_j_distances <= threshold] 
-                if scores[i] >= torch.max(detection_scores_j) and label_not_assigned[j] == 1: # check max score and have not been assigned
+                if scores[i] >= torch.max(detection_scores_j): # check max score and have not been assigned
                     tp[i] = 1
-                    label_not_assigned[j] = 0 # change it to have been assigned
-        fn = label_not_assigned
+                    #label_assigned[j] = 1 # change it to have been assigned
+        fn = 1 - tp.sum()
         matchings[w] = (scores, tp, fn)
 
     concat_scores, concat_tp, concat_fn = [], [], []
@@ -101,13 +101,13 @@ def compute_precision_recall_curve(
 
     concat_scores = torch.cat(concat_scores)
     concat_tp = torch.cat(concat_tp)
-    concat_fn = torch.cat(concat_fn)    
+    concat_fn = torch.sum(concat_fn)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True)
     tp_desc = concat_tp[indices]
     fp_desc = 1 - tp_desc
     
-    topk_fn = torch.sum(concat_fn)
+    topk_fn = concat_fn
     
     for k in range(1, scores_desc.shape[0]):
         topk_tp = torch.sum(tp_desc[:k])
