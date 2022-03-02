@@ -76,7 +76,7 @@ def compute_precision_recall_curve(
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
         total_labels += M
         # sort scores
-        scores, idx_for_desc = torch.sort(detections.scores, descending=True)
+        scores, idx_for_desc = torch.sort(detections.scores, descending=True, stable=True, dim=0)
         centroids = detections.centroids[idx_for_desc] # detections are now sorted in the descending order of the scores
         tp = torch.tensor([0] * N)
         #label_assigned = torch.tensor([0] * M)
@@ -87,7 +87,7 @@ def compute_precision_recall_curve(
             if distances[i][j] <= threshold:
                 label_j_distances = distances[:, j]
                 detection_scores_j = scores[label_j_distances <= threshold] 
-                if scores[i] >= torch.max(detection_scores_j): # check max score and have not been assigned
+                if scores[i] == torch.max(detection_scores_j) : # check max score and have not been assigned
                     tp[i] = 1
                     #label_assigned[j] = 1 # change it to have been assigned
         fn = M - tp.sum()
@@ -99,11 +99,11 @@ def compute_precision_recall_curve(
         concat_tp.append(tp)
         concat_fn.append(fn)
 
-    concat_scores = torch.cat(concat_scores)
-    concat_tp = torch.cat(concat_tp)
+    concat_scores = torch.cat(concat_scores).reshape(concat_scores.shape[0])
+    concat_tp = torch.cat(concat_tp).reshape(concat_tp.shape[0])
     concat_fn = sum(concat_fn)    
 
-    scores_desc, indices = torch.sort(concat_scores, descending=True)
+    scores_desc, indices = torch.sort(concat_scores, descending=True, stable=True, dim=0)
     tp_desc = concat_tp[indices]
     fp_desc = 1 - tp_desc
     
