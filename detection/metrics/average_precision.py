@@ -100,7 +100,7 @@ def compute_precision_recall_curve(
         concat_fn.append(fn)
 
     concat_scores = torch.cat(concat_scores).reshape(concat_scores.shape[0])
-    concat_tp = torch.cat(concat_tp).reshape(concat_tp.shape[0])
+    concat_tp = torch.cat(concat_tp).reshape(concat_tp.shape[0]) 
     concat_fn = sum(concat_fn)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True, stable=True, dim=0)
@@ -113,10 +113,7 @@ def compute_precision_recall_curve(
         topk_tp = torch.sum(tp_desc[:k])
         topk_fp = torch.sum(fp_desc[:k])
         # topk_tp + topk_fp should be equivalent to k
-        print(topk_tp + topk_fp == k)
         precisions.append(topk_tp/(k))
-        # total number of labels it should be torch.sum(tp_desc) + torch.sum(concat_fn)
-        print(torch.sum(tp_desc)+torch.sum(concat_fn) == total_labels)
         recalls.append(topk_tp/(torch.sum(tp_desc)+torch.sum(concat_fn)))
     
     return PRCurve(torch.tensor(precisions), torch.tensor(recalls))
