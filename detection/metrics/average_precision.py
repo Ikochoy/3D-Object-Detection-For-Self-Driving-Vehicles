@@ -71,15 +71,22 @@ def compute_precision_recall_curve(
         # construct a score and tp, and fn vector
         detections, labels = frame.detections, frame.labels
         N, M = detections.centroids.shape[0], labels.centroids.shape[0]
+        # print(N, M)
+        # print(detections.centroids.shape, detections.scores.shape)
         total_labels += M
         # sort scores
         scores, idx_for_desc = torch.sort(detections.scores, descending=True, stable=True, dim=0)
+        # print(scores.shape, detections.scores.shape)
+        # print(idx_for_desc.shape, idx_for_desc)
         centroids = detections.centroids[idx_for_desc] # detections are now sorted in the descending order of the scores
         tp = torch.tensor([0] * N)
-        distances = torch.cdist(centroids[None].flatten(2), labels.centroids[None].flatten(2))
+        distances = torch.cdist(centroids[None].flatten(2), labels.centroids[None].flatten(2))[0]
+        # print(distances.shape, distances)
         for i in range(N):  # for each detection starting from the detection with the greatest score
             distance_i = distances[i] # distances between detection i and all labels
             j = torch.argmin(distance_i) # get the closest label
+            # print(i, j)
+            # print(threshold)
             if distances[i][j] <= threshold:
                 label_j_distances = distances[:, j]
                 detection_scores_j = scores[label_j_distances <= threshold] 
@@ -94,8 +101,10 @@ def compute_precision_recall_curve(
         concat_tp.append(tp)
         concat_fn.append(fn)
 
-    concat_scores = torch.cat(concat_scores).reshape(concat_scores.shape[0])
-    concat_tp = torch.cat(concat_tp).reshape(concat_tp.shape[0]) 
+    concat_scores = torch.cat(concat_scores)
+    concat_scores = concat_scores.reshape(concat_scores.shape[0])
+    concat_tp = torch.cat(concat_tp)
+    concat_tp = concat_tp.reshape(concat_tp.shape[0])
     concat_fn = sum(concat_fn)    
 
     scores_desc, indices = torch.sort(concat_scores, descending=True, stable=True, dim=0)
