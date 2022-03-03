@@ -30,14 +30,6 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
         An [H x W] heatmap tensor, normalized such that its peak is 1.
     """
 
-    # grid_coords.shape == (h, w, 2)  which is [400, 608]
-    # print(grid_coords[0, 1])  # gives tensor([1, 0])
-    # center == (cx, cy)  e.g. [576.9950, 165.3658]
-
-    # tensor = grid_coords.clone().detach()
-    # tensor_reshaped = tensor.reshape(h * w, 2)
-    # print("HERE")
-    # print(center)
     gaussianed = torch.exp(torch.neg((grid_coords[:, :, 0] - center[0])**2 + (grid_coords[:, :, 1] - center[1])**2 ) / scale)
     # guassianed has shape [400, 608]
     
@@ -134,12 +126,8 @@ class DetectionLossTargetBuilder:
         # TODO: Replace this stub code.
         offsets = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
-        # print("ENTERING")
-        # print(index_mask[0])
-        # print(cx, cy)
         values = torch.dstack([cy - index_mask[:, 0], cx - index_mask[:, 1]])
         values = torch.sum(values, dim=0)
-        # print(values[0])
         offsets.index_put_(tuple(index_mask.t()), values)
 
         # 4. Create box size training target.
@@ -152,7 +140,7 @@ class DetectionLossTargetBuilder:
         sizes = torch.zeros(H, W, 2)
         index_mask = (heatmap > self._heatmap_threshold).nonzero(as_tuple=False)
 
-        # print(x_size, y_size)  # x_size tends to be larger than y_size, meaning x_size should correspond to j which is width W
+        # x_size tends to be larger than y_size, meaning x_size should correspond to j which is width W
         values = (torch.tensor([y_size, x_size])).repeat(index_mask.shape[0], 1)
         sizes.index_put_(tuple(index_mask.t()), values)
         
@@ -189,9 +177,6 @@ class DetectionLossTargetBuilder:
 
         # 1. Build a list of N [7 x H x W] target tensors for each of the N labels.
         target_tensors = []
-        print("HERE", torch.max(labels.boxes_x), torch.max(labels.boxes_y))
-        print(labels.boxes_x)
-        print(labels.boxes_y)
         for index in range(len(labels)):
             target_tensor_for_label = self.build_target_tensor_for_label(
                 labels.centroids_x[index].item(),
@@ -201,7 +186,6 @@ class DetectionLossTargetBuilder:
                 labels.boxes_y[index].item(),
             )
             target_tensors.append(target_tensor_for_label)
-        print("", max([target_tensors[0][0]]))
 
         # 2. Combine the target tensors into a single [7 x H x W] target tensor.
         # For each pixel (i, j) of the aggregated tensor, we keep the maximum heatmap

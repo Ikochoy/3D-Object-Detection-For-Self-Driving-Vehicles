@@ -62,9 +62,6 @@ def compute_precision_recall_curve(
         A precision/recall curve.
     """
     # TODO: Replace this stub code.
-    # highest detection score & lowest distance
-    # for each detection D: closest label L (if not taken yet) ->  else-case
-    # sort detections by their scores, for unassigned label etc.
 
     precisions = []
     recalls = []
@@ -79,7 +76,6 @@ def compute_precision_recall_curve(
         scores, idx_for_desc = torch.sort(detections.scores, descending=True, stable=True, dim=0)
         centroids = detections.centroids[idx_for_desc] # detections are now sorted in the descending order of the scores
         tp = torch.tensor([0] * N)
-        #label_assigned = torch.tensor([0] * M)
         distances = torch.cdist(centroids[None].flatten(2), labels.centroids[None].flatten(2))
         for i in range(N):  # for each detection starting from the detection with the greatest score
             distance_i = distances[i] # distances between detection i and all labels
@@ -89,7 +85,6 @@ def compute_precision_recall_curve(
                 detection_scores_j = scores[label_j_distances <= threshold] 
                 if scores[i] == torch.max(detection_scores_j) : # check max score and have not been assigned
                     tp[i] = 1
-                    #label_assigned[j] = 1 # change it to have been assigned
         fn = M - tp.sum()
         matchings[w] = (scores, tp, fn)
 

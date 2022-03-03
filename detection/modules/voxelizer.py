@@ -50,7 +50,6 @@ class Voxelizer(torch.nn.Module):
         self._y_min, self._y_max = config.y_range
         self._z_min, self._z_max = config.z_range
         self._depth, self._height, self._width = config.bev_size
-        # print("CONFIG:", self._x_min)
 
     def forward(self, pointclouds: List[torch.Tensor]) -> torch.Tensor:
         """Voxelize a batch of lidar pointclouds into a BEV occupacy image.
