@@ -42,50 +42,14 @@ def heatmap_weighted_mse_loss(
 
 
 def heatmap_focal_loss(targets: Tensor, predictions: Tensor, gamma: float, alpha: float):
-    # mask = heatmap > heatmap_threshold
-    # predictions_masked = torch.masked_select(predictions, mask)
-    # targets_masked = torch.masked_select(targets, mask)
-    # print("TARGETS", targets)
-    # print(targets.sum())
-    # print("PREDICTIONS", predictions)
-    
-
-    # p = torch.sigmoid(predictions)
     # p_t = p when target = 1 and 1-p when target = 0
     p = predictions
-    p_t = p * targets + (1-p) * (1- targets)  # our problem isn't binary classification
+    p_t = p * targets + (1-p) * (1- targets)
 
-    # unable to use because CrssEntropyLoss gives scaler?
-    # criterion = torch.nn.B??(reduction='none')  # to output vector ce
-    # ce = criterion(predictions, targets)
     alpha_t = alpha * targets + (1-alpha) * (1 - targets)
     focal_loss = alpha_t * (1-p_t)**(gamma) * -(torch.log(p_t))
-    # focal_loss = alpha_t * (1-p_t)**(gamma) * ce
 
     return focal_loss.mean()
-
-    # alpha = 2
-    # beta = 4
-
-    # y_hat = predictions
-    # y = targets
-
-    # N = targets.shape[0] * targets.shape[1] 
-    # ones = (targets == 1)
-    # print("#"*10)
-    # print(targets[ones].min() == 1, targets[ones].max() == 1, targets[ones].shape, targets.shape)
-    # predictions_ones = predictions[ones]
-
-    # total_loss_ones = torch.sum((1 - predictions_ones)**alpha * torch.log(predictions_ones))
-
-    # none_ones = (targets != 1)
-    # predictions_none_ones = predictions[none_ones]
-
-    # total_loss_none_ones = torch.sum((1 - targets[none_ones])**beta * predictions_none_ones**alpha * torch.log(1-predictions_none_ones))
-
-    # total_loss = total_loss_ones + total_loss_none_ones
-
-    # return -(total_loss / N)
 
 
 @dataclass

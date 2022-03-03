@@ -46,17 +46,13 @@ def create_heatmap(grid_coords: Tensor, center: Tensor, scale: float) -> Tensor:
     return gaussianed
 
 def create_general_heatmap(grid_coords: Tensor, center: Tensor, scale_x: float, scale_y:float, headings: Tensor):
-    print("*"*10)
-    print(center, scale_x, scale_y, headings)
     x, y = grid_coords[:, :, 0], grid_coords[:, :, 1]
     sin, cos = headings[0], headings[1]
     a = cos**2/scale_x + sin**2/scale_y
     b = -((2*sin*cos)/(2*scale_x)) + (2*sin*cos)/(2*scale_y)
     c = sin**2/scale_x + cos**2/scale_y
     gaussianed = torch.exp(torch.neg(a*(x-center[0])**2 + c*(y-center[1])**2 + 2*b*(x-center[0])*(y-center[1])))
-    # gaussianed = torch.div(gaussianed, gaussianed.max())
 
-    print(gaussianed.sum())
     return gaussianed
 
 
