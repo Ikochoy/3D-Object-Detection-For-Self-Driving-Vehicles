@@ -1,3 +1,50 @@
+# Method for running experiments in Part B
+
+## Using focal loss
+Use (uncomment) the following line from loss_function.py:
+```
+heatmap_loss = heatmap_focal_loss(target_heatmap, predicted_heatmap, gamma=gamma, alpha=alpha)
+```
+And comment out:
+```
+heatmap_loss = ((target_heatmap - predicted_heatmap) ** 2).mean()
+```
+Tuning hyperparameters alpha and gamma e.g. :
+```
+gamma = 3.0
+alpha = 0.25
+```
+
+## Creating general heatmap using rotated anisotropic gaussian kernal
+Use (uncomment) the following line from loss_target.py:
+```
+heatmap = create_general_heatmap(grid_coords, center=center, scale_x=scale_x, scale_y=scale_y, headings=torch.tensor([math.sin(yaw), math.cos(yaw)]))  # [H x W]
+```
+
+And comment out:
+```
+heatmap = create_heatmap(grid_coords, center=center, scale=scale)  # [H x W
+```
+
+Standard scale_x and scale_y used:
+```
+scale_x = 2*(x_size**2) / self._heatmap_norm_scale
+scale_y = 2*(y_size**2)/ self._heatmap_norm_scale
+```
+
+Tuning parameters scale_x and scale_y e.g.:
+```
+scale_x = 1*(x_size**2) / self._heatmap_norm_scale
+scale_y = 1*(y_size**2)/ self._heatmap_norm_scale
+```
+
+## Using focal loss and rotated anisotropic gaussian kernal
+Use the combination of the commenting and uncommenting outlined above to modify code.
+
+
+
+
+
 # CSC490H1: Making Your Self-driving Car Perceive the World
 
 This repository contains the starter code for CSC490H1:
